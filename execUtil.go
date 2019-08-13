@@ -3,7 +3,6 @@ package main
 import (
   "os/exec"
   "os"
-  "log"
   "strconv"
   "time"
   "io"
@@ -11,6 +10,8 @@ import (
 )
 
 // handle exec calls
+
+// TODO prune finished tasks when some max map size is reached
 
 // maps task_id to cmd objects
 var TaskIdCommandMap = make(map[string]*CommandWrapper)
@@ -41,18 +42,13 @@ func GetProcessStatus(task_id string) StatusResponse {
   }
 
   s.Output = TaskIdCommandMap[task_id].Output.String()
-
-  log.Printf("GetProcessStatus task_id=%s, pid=%d, ExitCode=%d, Finished=%v",
-    task_id, TaskIdCommandMap[task_id].Command.Process.Pid,
-    TaskIdCommandMap[task_id].Command.ProcessState.ExitCode(), TaskIdCommandMap[task_id].Finished)
-
-  // return TaskIdCommandMap[task_id].Command.ProcessState.ExitCode()
   return s
 }
 
 // start process
-func RunCommand(command string) string {
-  log.Printf("command=%s", command)
+func RunCommand(command string) StartResponse {
+
+  var s StartResponse
 
   cmd := exec.Command(command)
 
@@ -60,40 +56,52 @@ func RunCommand(command string) string {
   cmd.Stdout = io.MultiWriter(os.Stdout, &outBuf)
 
   err := cmd.Start()
+
   if err != nil {
-     log.Fatal(err)
+    s.Error = err.Error()
+    return s
   }
 
   task_id := Hostname + "-" + strconv.Itoa(cmd.Process.Pid) // TODO handle if Process or Pid nil
+  s.Task_id = task_id
+
   TaskIdCommandMap[task_id] = &CommandWrapper{cmd,false,time.Now(),time.Time{}, &outBuf}
 
   // async subroutine
   go func() {
-      log.Printf("pre-wait ExitCode=%v", cmd.ProcessState.ExitCode()) // ExitCode can be -1 when stilling running
       err = cmd.Wait()
       TaskIdCommandMap[task_id].Finished = true
       TaskIdCommandMap[task_id].EndTime = time.Now()
       if err != nil  {
         // TODO handle error
-        log.Printf("Command finished with error: %v", err)
-      } else {
-        log.Printf("post-wait ExitCode=%v", cmd.ProcessState.ExitCode())
+        s.Error = err.Error()
       }
   }()
 
-  log.Printf("RunCommand task_id=%s, pid=%d", task_id, TaskIdCommandMap[task_id].Command.Process.Pid)
-  return task_id
+  return s
 }
 
 // @param pid - stops process with this pid
-func StopProcess(task_id string) int {
+func StopProcess(task_id string) StopResponse {
 
-  // check if already finished
+  var s StopResponse
+  s.Task_id = task_id
 
-  err := TaskIdCommandMap[task_id].Command.Process.Kill()
-  if err != nil {
-     log.Fatal(err)
+  // check if task_id in map
+  if commandWrapper, ok := TaskIdCommandMap[task_id]; ok {
+    //do something here
+    err := commandWrapper.Command.Process.Kill()
+    if err != nil {
+      s.Error = err.Error()
+      return s
+    } else {
+      s.ExitCode = TaskIdCommandMap[task_id].Command.ProcessState.ExitCode()
+      return s
+    }
   }
-  log.Printf("StopProcess task_id=%s, pid=%d", task_id, TaskIdCommandMap[task_id].Command.Process.Pid)
-  return TaskIdCommandMap[task_id].Command.ProcessState.ExitCode()
+
+  // task_id invalid
+  s.Error = "invalid task_id"
+
+  return s
 }
