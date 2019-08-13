@@ -10,11 +10,6 @@ import (
 
 // TODO add message fields
 
-type StatusResponse struct {
-    Task_id string `json:"task_id"`
-    Status int `json:"status"`
-}
-
 type StartResponse struct {
     Task_id string `json:"task_id"`
 }
@@ -31,13 +26,12 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	task_id := vars["task_id"]
 
-	status := GetProcessStatus(task_id)
-	log.Printf("task_id=%s, status=%d", task_id, status)
+	statusResponse := GetProcessStatus(task_id)
+	// log.Printf("task_id=%s, status=%d", task_id, status)
 
-	responseBody := StatusResponse{task_id, status}
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(responseBody)
+	json.NewEncoder(w).Encode(statusResponse)
 }
 
 func StopHandler(w http.ResponseWriter, r *http.Request) {

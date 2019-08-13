@@ -9,7 +9,7 @@ sudo docker run --volume "$(pwd)":/go/src/github.com/GeorgeLuo/grpc --interactiv
 ```
 Run go server, exposed to port 8443
 ```
-go run main.go handlers.go execUtil.go
+go run main.go handlers.go execUtil.go models.go
 ```
 
 
