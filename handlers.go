@@ -7,21 +7,20 @@ import (
 	"net/http"
 )
 
-// path param task_id : identifier of task query
-// returns status of running service
+// StatusHandler returns status of running service.
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	task_id := vars["task_id"]
 
-	res := AsyncGetProcessStatus(task_id)
-	// statusResponse := AsyncGetProcessStatus(task_id)
+	res := GetProcessStatus(task_id)
 
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)
 }
 
+// StopHandler handles the logic of a call to /stop to stop a process.
 func StopHandler(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -45,7 +44,8 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func AsyncStartHandler(w http.ResponseWriter, r *http.Request) {
+// StartHandler handles the logic of a call to /start to start a process.
+func StartHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -59,9 +59,8 @@ func AsyncStartHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(ErrorMessage{"no command provided"})
 		return
 	}
-	res := AsyncRunCommand(command)
+	res := RunCommand(command)
 
-	// startResponse := RunCommand(command)
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(res)

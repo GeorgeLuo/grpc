@@ -27,7 +27,7 @@ func init() {
 }
 
 // GetProcessStatus is called to retrieve the details of a processes by task_id.
-func AsyncGetProcessStatus(task_id string) StatusResponse {
+func GetProcessStatus(task_id string) StatusResponse {
 
 	var s StatusResponse
 	s.Task_id = task_id
@@ -61,7 +61,8 @@ func AsyncGetProcessStatus(task_id string) StatusResponse {
 	return s
 }
 
-func AsyncRunCommand(command string) StartResponse {
+// RunCommand starts a process from command argument.
+func RunCommand(command string) StartResponse {
 	var s StartResponse
 
 	cmd := exec.Command(command)

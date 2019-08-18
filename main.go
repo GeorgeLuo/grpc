@@ -15,7 +15,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/status/{task_id}", StatusHandler).
 		Methods("GET")
-	router.HandleFunc("/start", AsyncStartHandler).
+	router.HandleFunc("/start", StartHandler).
 		Methods("POST")
 	router.HandleFunc("/stop", StopHandler).
 		Methods("POST")

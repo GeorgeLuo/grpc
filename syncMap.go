@@ -46,7 +46,7 @@ type CommandWrapper struct {
 	*sync.Mutex
 }
 
-// NewOutput is used to return a default Output object.
+// NewCommandWrapper is used to return a default CommandWrapper object.
 func NewCommandWrapper(cmd *exec.Cmd, outBuff *Output) *CommandWrapper {
 	return &CommandWrapper{
 		Command:    cmd,
@@ -59,28 +59,28 @@ func NewCommandWrapper(cmd *exec.Cmd, outBuff *Output) *CommandWrapper {
 	}
 }
 
-// NewOutput is used to return a default Output object.
+// SetFinished is used to set the finished status of a process.
 func (cw *CommandWrapper) SetFinished(finished bool) {
 	cw.Lock()
 	defer cw.Unlock()
 	cw.finished = finished
 }
 
-// NewOutput is used to return a default Output object.
+// GetFinished is used to access the finished status of a process.
 func (cw *CommandWrapper) GetFinished() bool {
 	cw.Lock()
 	defer cw.Unlock()
 	return cw.finished
 }
 
-// NewOutput is used to return a default Output object.
+// GetExitCode is used to access exitCode value.
 func (cw *CommandWrapper) GetExitCode() int {
 	cw.Lock()
 	defer cw.Unlock()
 	return cw.exitCode
 }
 
-// NewOutput is used to return a default Output object.
+// SetExitCode is used set the exitCode value.
 func (cw *CommandWrapper) SetExitCode(code int) {
 	cw.Lock()
 	defer cw.Unlock()
