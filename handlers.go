@@ -1,10 +1,10 @@
-
 package main
+
 import (
-	"net/http"
-	"github.com/gorilla/mux"
 	"encoding/json"
+	"github.com/gorilla/mux"
 	"io/ioutil"
+	"net/http"
 )
 
 // path param task_id : identifier of task query
@@ -14,12 +14,12 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	task_id := vars["task_id"]
 
-	statusResponse := GetProcessStatus(task_id)
-	// log.Printf("task_id=%s, status=%d", task_id, status)
+	res := AsyncGetProcessStatus(task_id)
+	// statusResponse := AsyncGetProcessStatus(task_id)
 
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(statusResponse)
+	json.NewEncoder(w).Encode(res)
 }
 
 func StopHandler(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +29,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(body, &body_map)
 
 	task_id := body_map["task_id"]
-	
+
 	if task_id == "" {
 		w.WriteHeader(401)
 		w.Header().Set("Content-Type", "application/json")
@@ -45,7 +45,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func StartHandler(w http.ResponseWriter, r *http.Request) {
+func AsyncStartHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -59,10 +59,10 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(ErrorMessage{"no command provided"})
 		return
 	}
+	res := AsyncRunCommand(command)
 
-	// TODO define and handle errors
-	startResponse := RunCommand(command)
+	// startResponse := RunCommand(command)
 	w.WriteHeader(200)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(startResponse)
+	json.NewEncoder(w).Encode(res)
 }

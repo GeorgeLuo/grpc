@@ -1,107 +1,140 @@
 package main
 
 import (
-  "os/exec"
-  "os"
-  "strconv"
-  "time"
-  "io"
-  "bytes"
+	"io"
+	"os"
+	"os/exec"
+	"strconv"
+	"syscall"
+	"time"
 )
 
 // handle exec calls
 
 // TODO prune finished tasks when some max map size is reached
 
-// maps task_id to cmd objects
-var TaskIdCommandMap = make(map[string]*CommandWrapper)
+var taskIdCommandMap SyncMap
+var hostname string
 
-// used for task_id
-var Hostname, err = os.Hostname()
+func init() {
+	var err error
+	hostname, err = os.Hostname()
+	if err != nil {
+		panic(err)
+	}
 
-type CommandWrapper struct {
-	Command   *exec.Cmd // underlying command
-	Finished  bool // set upon process finish
-  StartTime time.Time
-  EndTime   time.Time
-  Output    *bytes.Buffer
+	taskIdCommandMap = NewMap()
 }
 
-func GetProcessStatus(task_id string) StatusResponse {
+// GetProcessStatus is called to retrieve the details of a processes by task_id.
+func AsyncGetProcessStatus(task_id string) StatusResponse {
 
-  var s StatusResponse
+	var s StatusResponse
+	s.Task_id = task_id
 
-  s.Task_id = task_id
-  s.StartTime = TaskIdCommandMap[task_id].StartTime
-  s.Finished = TaskIdCommandMap[task_id].Finished
+	var command *CommandWrapper
+	var ok bool
 
-  // cmd.Wait() has finished, append
-  if(s.Finished) {
-    s.EndTime = TaskIdCommandMap[task_id].EndTime
-    s.ExitCode = TaskIdCommandMap[task_id].Command.ProcessState.ExitCode()
-  }
+	// validate task_id
+	if command, ok = taskIdCommandMap.Get(task_id); !ok {
+		s.Error = "invalid task_id"
+		return s
+	}
 
-  s.Output = TaskIdCommandMap[task_id].Output.String()
-  return s
+	// TODO refactor this into un/finished process
+	s.Task_id = task_id
+	s.StartTime = new(time.Time)
+	*s.StartTime = command.StartTime
+	s.Finished = new(bool)
+	*s.Finished = command.GetFinished()
+
+	// cmd.Wait() has finished, append
+	if command.GetFinished() {
+		s.EndTime = new(time.Time)
+		*s.EndTime = command.EndTime
+		s.ExitCode = new(int)
+		*s.ExitCode = command.GetExitCode()
+	}
+
+	s.Output = command.StdoutBuff.Lines()
+
+	return s
 }
 
-// start process
-func RunCommand(command string) StartResponse {
+func AsyncRunCommand(command string) StartResponse {
+	var s StartResponse
 
-  var s StartResponse
+	cmd := exec.Command(command)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-  cmd := exec.Command(command)
+	outBuf := NewOutput()
+	cmd.Stdout = io.MultiWriter(os.Stdout, outBuf)
 
-  var outBuf bytes.Buffer
-  cmd.Stdout = io.MultiWriter(os.Stdout, &outBuf)
+	err := cmd.Start()
 
-  err := cmd.Start()
+	if err != nil {
+		s.Error = err.Error()
+		return s
+	}
 
-  if err != nil {
-    s.Error = err.Error()
-    return s
-  }
+	pgid, err := syscall.Getpgid(cmd.Process.Pid)
 
-  task_id := Hostname + "-" + strconv.Itoa(cmd.Process.Pid) // TODO handle if Process or Pid nil
-  s.Task_id = task_id
+	if err != nil {
+		s.Error = err.Error()
+		return s
+	}
 
-  TaskIdCommandMap[task_id] = &CommandWrapper{cmd,false,time.Now(),time.Time{}, &outBuf}
+	task_id := hostname + "-" + strconv.Itoa(pgid) // TODO handle if Process or Pid nil
+	s.Task_id = task_id
 
-  // async subroutine
-  go func() {
-      err = cmd.Wait()
-      TaskIdCommandMap[task_id].Finished = true
-      TaskIdCommandMap[task_id].EndTime = time.Now()
-      if err != nil  {
-        // TODO handle error
-        s.Error = err.Error()
-      }
-  }()
+	taskIdCommandMap.Put(task_id, NewCommandWrapper(cmd, outBuf))
 
-  return s
+	// async subroutine
+	go func() {
+		// TODO add append error to CommandWrapper, impl accessors and setters
+		cmd.Wait()
+		cw, _ := taskIdCommandMap.Get(task_id)
+		cw.SetExitCode(cmd.ProcessState.ExitCode())
+		cw.SetFinished(true)
+	}()
+
+	return s
 }
 
-// @param pid - stops process with this pid
+// StopProcess is called to end a previously started process.
 func StopProcess(task_id string) StopResponse {
 
-  var s StopResponse
-  s.Task_id = task_id
+	var s StopResponse
+	s.Task_id = task_id
 
-  // check if task_id in map
-  if commandWrapper, ok := TaskIdCommandMap[task_id]; ok {
-    //do something here
-    err := commandWrapper.Command.Process.Kill()
-    if err != nil {
-      s.Error = err.Error()
-      return s
-    } else {
-      s.ExitCode = TaskIdCommandMap[task_id].Command.ProcessState.ExitCode()
-      return s
-    }
-  }
+	var command *CommandWrapper
+	var ok bool
 
-  // task_id invalid
-  s.Error = "invalid task_id"
+	// if task_id invalid, return error.
+	if command, ok = taskIdCommandMap.Get(task_id); !ok {
+		s.Error = "invalid task_id"
+		return s
+	}
 
-  return s
+	// send stop signal first
+	// TODO verify flat processes work with gpid as well
+
+	pgid, err := syscall.Getpgid(command.Command.Process.Pid)
+	err = syscall.Kill(-pgid, syscall.SIGINT)
+
+	if err != nil {
+
+		errStr := err.Error()
+
+		err = syscall.Kill(-pgid, syscall.SIGKILL)
+		if err != nil {
+			s.Error = err.Error()
+			errStr += ", " + err.Error()
+			return s
+		}
+	}
+
+	s.ExitCode = command.GetExitCode()
+
+	return s
 }
