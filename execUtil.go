@@ -117,6 +117,14 @@ func StopProcess(task_id string) StopResponse {
 		return s
 	}
 
+  s.ExitCode = new(int)
+
+  if command.GetFinished() {
+    s.Error = "process already finished."
+    *s.ExitCode = command.GetExitCode()
+		return s
+  }
+
 	// send stop signal first
 	// TODO verify flat processes work with gpid as well
 
@@ -135,7 +143,7 @@ func StopProcess(task_id string) StopResponse {
 		}
 	}
 
-	s.ExitCode = command.GetExitCode()
+	*s.ExitCode = command.GetExitCode()
 
 	return s
 }

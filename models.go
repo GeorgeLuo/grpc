@@ -24,7 +24,7 @@ type StartResponse struct {
 
 type StopResponse struct {
 	Task_id  string `json:"task_id"`
-	ExitCode int    `json:"exit_code,omitempty"`
+	ExitCode *int    `json:"exit_code,omitempty"`
 	Error    string `json:"error,omitempty"`
 }
 
