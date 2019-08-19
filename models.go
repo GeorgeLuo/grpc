@@ -14,7 +14,7 @@ type StatusResponse struct {
 	EndTime   *time.Time `json:"end_time,omitempty"`
 	ExitCode  *int       `json:"exit_code,omitempty"`
 	Output    []string   `json:"output,omitempty"`
-	Error     string     `json:"error,omitempty"`
+	Errors    []string   `json:"errors,omitempty"`
 }
 
 // Response structure for /start call.
@@ -25,9 +25,9 @@ type StartResponse struct {
 
 // Response structure for /stop call.
 type StopResponse struct {
-	Task_id  string `json:"task_id"`
-	ExitCode *int    `json:"exit_code,omitempty"`
-	Error    string `json:"error,omitempty"`
+	Task_id  string   `json:"task_id"`
+	ExitCode *int     `json:"exit_code,omitempty"`
+	Error    []string `json:"errors,omitempty"`
 }
 
 // Response structure for error message.

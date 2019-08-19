@@ -37,7 +37,7 @@ func GetProcessStatus(task_id string) StatusResponse {
 
 	// validate task_id
 	if command, ok = taskIdCommandMap.Get(task_id); !ok {
-		s.Error = "invalid task_id"
+		s.Errors = []string{"invalid task_id"}
 		return s
 	}
 
@@ -47,6 +47,7 @@ func GetProcessStatus(task_id string) StatusResponse {
 	*s.StartTime = command.StartTime
 	s.Finished = new(bool)
 	*s.Finished = command.GetFinished()
+	s.Errors = command.GetErrors()
 
 	// cmd.Wait() has finished, append
 	if command.GetFinished() {
@@ -93,8 +94,11 @@ func RunCommand(command string) StartResponse {
 	// async subroutine
 	go func() {
 		// TODO add append error to CommandWrapper, impl accessors and setters
-		cmd.Wait()
+		err = cmd.Wait()
 		cw, _ := taskIdCommandMap.Get(task_id)
+		if err != nil {
+			cw.AppendError(err.Error())
+		}
 		cw.SetExitCode(cmd.ProcessState.ExitCode())
 		cw.SetFinished(true)
 	}()
@@ -113,17 +117,17 @@ func StopProcess(task_id string) StopResponse {
 
 	// if task_id invalid, return error.
 	if command, ok = taskIdCommandMap.Get(task_id); !ok {
-		s.Error = "invalid task_id"
+		s.Error = []string{"invalid task_id"}
 		return s
 	}
 
-  s.ExitCode = new(int)
+	s.ExitCode = new(int)
 
-  if command.GetFinished() {
-    s.Error = "process already finished."
-    *s.ExitCode = command.GetExitCode()
+	if command.GetFinished() {
+		s.Error = []string{"process already finished."}
+		*s.ExitCode = command.GetExitCode()
 		return s
-  }
+	}
 
 	// send stop signal first
 	// TODO verify flat processes work with gpid as well
@@ -133,14 +137,16 @@ func StopProcess(task_id string) StopResponse {
 
 	if err != nil {
 
-		errStr := err.Error()
+		errs := []string{err.Error()}
 
 		err = syscall.Kill(-pgid, syscall.SIGKILL)
 		if err != nil {
-			s.Error = err.Error()
-			errStr += ", " + err.Error()
+			errs = append(errs, err.Error())
+			s.Error = errs
 			return s
 		}
+
+		s.Error = errs
 	}
 
 	*s.ExitCode = command.GetExitCode()

@@ -42,6 +42,7 @@ type CommandWrapper struct {
 	StartTime  time.Time
 	EndTime    time.Time
 	StdoutBuff *Output
+	errors     []string
 	exitCode   int
 	*sync.Mutex
 }
@@ -55,6 +56,7 @@ func NewCommandWrapper(cmd *exec.Cmd, outBuff *Output) *CommandWrapper {
 		EndTime:    time.Time{},
 		StdoutBuff: outBuff,
 		exitCode:   cmd.ProcessState.ExitCode(),
+		errors:     []string{},
 		Mutex:      &sync.Mutex{},
 	}
 }
@@ -85,4 +87,18 @@ func (cw *CommandWrapper) SetExitCode(code int) {
 	cw.Lock()
 	defer cw.Unlock()
 	cw.exitCode = code
+}
+
+// GetErrors returns errors attributed to the CommandWrapper lifecycle.
+func (cw *CommandWrapper) GetErrors() []string {
+	cw.Lock()
+	defer cw.Unlock()
+	return cw.errors
+}
+
+// GetErrors appends an error attributed to the CommandWrapper lifecycle.
+func (cw *CommandWrapper) AppendError(error string) {
+	cw.Lock()
+	defer cw.Unlock()
+	cw.errors = append(cw.errors, error)
 }
