@@ -6,13 +6,13 @@ import (
 	"time"
 )
 
-// Output is used to retrieve output to a buffer as populated.
+// SyncMap is a map of taskID to previous processes.
 type SyncMap struct {
 	cmdMap map[string]*CommandWrapper
 	*sync.Mutex
 }
 
-// NewOutput is used to return a default Output object.
+// NewMap is used to return an empty SyncMap.
 func NewMap() SyncMap {
 	return SyncMap{
 		cmdMap: make(map[string]*CommandWrapper),
@@ -20,29 +20,28 @@ func NewMap() SyncMap {
 	}
 }
 
-// Write is an operation to write to the underlying buffer.
-func (rwm *SyncMap) Put(task_id string, cmd *CommandWrapper) {
+// Put is an operation insert a new process in a SyncMap.
+func (rwm *SyncMap) Put(taskID string, cmd *CommandWrapper) {
 	rwm.Lock()
 	defer rwm.Unlock()
-	rwm.cmdMap[task_id] = cmd
+	rwm.cmdMap[taskID] = cmd
 }
 
-// Lines returns the contents of the buffer at the current state.
-func (rwm *SyncMap) Get(task_id string) (cmd *CommandWrapper, ok bool) {
+// Get returns the CommandWrapper mapped to the taskID.
+func (rwm *SyncMap) Get(taskID string) (cmd *CommandWrapper, ok bool) {
 	rwm.Lock()
 	defer rwm.Unlock()
-	cmd, ok = rwm.cmdMap[task_id]
+	cmd, ok = rwm.cmdMap[taskID]
 	return cmd, ok
 }
 
 // CommandWrapper encapsulates an exec.Cmd object with status metadata.
 type CommandWrapper struct {
 	Command    *exec.Cmd // underlying command
-	finished   bool      // set upon process finish
 	StartTime  time.Time
-	EndTime    time.Time
+	endTime    *time.Time
 	StdoutBuff *Output
-	errors     []string
+	execError  *string
 	exitCode   int
 	*sync.Mutex
 }
@@ -51,28 +50,27 @@ type CommandWrapper struct {
 func NewCommandWrapper(cmd *exec.Cmd, outBuff *Output) *CommandWrapper {
 	return &CommandWrapper{
 		Command:    cmd,
-		finished:   false,
 		StartTime:  time.Now(),
-		EndTime:    time.Time{},
+		endTime:    nil,
 		StdoutBuff: outBuff,
 		exitCode:   cmd.ProcessState.ExitCode(),
-		errors:     []string{},
+		execError:  nil,
 		Mutex:      &sync.Mutex{},
 	}
 }
 
-// SetFinished is used to set the finished status of a process.
-func (cw *CommandWrapper) SetFinished(finished bool) {
+// SetEndTime is used to set the end time of a process.
+func (cw *CommandWrapper) SetEndTime(endTime time.Time) {
 	cw.Lock()
 	defer cw.Unlock()
-	cw.finished = finished
+	cw.endTime = &endTime
 }
 
-// GetFinished is used to access the finished status of a process.
-func (cw *CommandWrapper) GetFinished() bool {
+// GetEndTime is used to access the end time of a process.
+func (cw *CommandWrapper) GetEndTime() *time.Time {
 	cw.Lock()
 	defer cw.Unlock()
-	return cw.finished
+	return cw.endTime
 }
 
 // GetExitCode is used to access exitCode value.
@@ -89,16 +87,16 @@ func (cw *CommandWrapper) SetExitCode(code int) {
 	cw.exitCode = code
 }
 
-// GetErrors returns errors attributed to the CommandWrapper lifecycle.
-func (cw *CommandWrapper) GetErrors() []string {
+// GetExecError returns errors attributed to the CommandWrapper lifecycle.
+func (cw *CommandWrapper) GetExecError() *string {
 	cw.Lock()
 	defer cw.Unlock()
-	return cw.errors
+	return cw.execError
 }
 
-// GetErrors appends an error attributed to the CommandWrapper lifecycle.
-func (cw *CommandWrapper) AppendError(error string) {
+// SetExecError appends an error attributed to the CommandWrapper lifecycle.
+func (cw *CommandWrapper) SetExecError(error string) {
 	cw.Lock()
 	defer cw.Unlock()
-	cw.errors = append(cw.errors, error)
+	cw.execError = &error
 }

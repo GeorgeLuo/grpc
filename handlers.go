@@ -2,46 +2,60 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 // StatusHandler returns status of running service.
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	task_id := vars["task_id"]
+	taskID := vars["task_id"]
 
-	res := GetProcessStatus(task_id)
+	ProcessStatusResponse, err := GetProcessStatus(taskID)
 
-	w.WriteHeader(200)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ErrorMessage{nil, err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	json.NewEncoder(w).Encode(ProcessStatusResponse)
 }
 
 // StopHandler handles the logic of a call to /stop to stop a process.
 func StopHandler(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 
-	body_map := make(map[string]string)
-	json.Unmarshal(body, &body_map)
+	bodyMap := make(map[string]string)
+	json.Unmarshal(body, &bodyMap)
 
-	task_id := body_map["task_id"]
+	taskID := bodyMap["task_id"]
 
-	if task_id == "" {
-		w.WriteHeader(401)
+	if taskID == "" {
+		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ErrorMessage{"no task_id provided"})
+		json.NewEncoder(w).Encode(ErrorMessage{nil, "no task_id provided"})
 		return
 	}
 
-	StopResponse := StopProcess(task_id)
+	StopResponse, err := StopProcess(taskID)
+	if err != nil {
+		// TODO handle different error cases
+		w.WriteHeader(http.StatusExpectationFailed)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ErrorMessage{&taskID, err.Error()})
+		return
+	}
 
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(StopResponse)
-
 }
 
 // StartHandler handles the logic of a call to /start to start a process.
@@ -49,19 +63,28 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(r.Body)
 
-	body_map := make(map[string]string)
-	json.Unmarshal(body, &body_map)
+	bodyMap := make(map[string]string)
+	json.Unmarshal(body, &bodyMap)
 
-	command := body_map["command"]
+	command := bodyMap["command"]
 	if command == "" {
-		w.WriteHeader(401)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ErrorMessage{"no command provided"})
+		json.NewEncoder(w).Encode(ErrorMessage{nil, "no command provided"})
 		return
 	}
-	res := RunCommand(command)
+	RunCommandResponse, err := RunCommand(command)
 
-	w.WriteHeader(200)
+	if err != nil {
+		// TODO handle different error cases, namely separate invalid task_id error code
+		// though this is not terribly illogical as a response
+		w.WriteHeader(http.StatusExpectationFailed)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ErrorMessage{nil, err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+	json.NewEncoder(w).Encode(RunCommandResponse)
 }

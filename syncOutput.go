@@ -8,8 +8,7 @@ import (
 
 // Output is used to retrieve output to a buffer as populated.
 type Output struct {
-	buf   *bytes.Buffer
-	lines []string
+	buf *bytes.Buffer
 	*sync.Mutex
 }
 
@@ -17,7 +16,6 @@ type Output struct {
 func NewOutput() *Output {
 	return &Output{
 		buf:   &bytes.Buffer{},
-		lines: []string{},
 		Mutex: &sync.Mutex{},
 	}
 }
@@ -34,8 +32,9 @@ func (rw *Output) Lines() []string {
 	rw.Lock()
 	defer rw.Unlock()
 	s := bufio.NewScanner(rw.buf)
+	var lines []string
 	for s.Scan() {
-		rw.lines = append(rw.lines, s.Text())
+		lines = append(lines, s.Text())
 	}
-	return rw.lines
+	return lines
 }
