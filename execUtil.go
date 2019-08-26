@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -64,8 +65,9 @@ func GetProcessStatus(taskID string) (*StatusResponse, error) {
 func RunCommand(command string) (*StartResponse, error) {
 
 	var startResponse StartResponse
+	splitCommand := strings.Split(command, " ")
 
-	cmd := exec.Command(command)
+	cmd := exec.Command(splitCommand[0], splitCommand[1:]...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
 	outBuf := NewOutput()
