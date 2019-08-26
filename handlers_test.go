@@ -59,7 +59,7 @@ func TestStatusWithInvalidTaskID(t *testing.T) {
 	}
 }
 
-// TestStartProcessBasic valid start command.
+// TestStartProcessBasic validates start command with status check after start call.
 func TestStartProcessBasic(t *testing.T) {
 
 	var data = []byte(`{"command":"echo 12345"}`)
@@ -126,7 +126,7 @@ func TestStartProcessBasic(t *testing.T) {
 	}
 }
 
-// TestStopProcessBasic valid start command.
+// TestStopProcessBasic validates stop command with status check after start then stop call.
 func TestStopProcessBasic(t *testing.T) {
 
 	var data = []byte(`{"command":"sleep 5"}`)
