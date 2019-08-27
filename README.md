@@ -20,19 +20,6 @@ go run main.go handlers.go execUtil.go syncOutput.go syncMap.go
 ```
 
 
-test a message to run a process using POST
-```
-curl   -X POST   http://localhost:8443/start   -H 'Content-Type: application/json'   -d '{"command":"./test_process.sh"}'
-```
-test a message to stop a process using POST
-```
-curl   -X POST   http://localhost:8443/stop   -H 'Content-Type: application/json'   -d '{"task_id":"987f769fca40-3635"}'
-```
-test a message retrieving GET
-```
-curl   http://localhost:8080/status/987f769fca40-3635
-```
-
 use client.go as cli-like process to start
 
 ```
