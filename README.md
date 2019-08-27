@@ -20,7 +20,7 @@ go run main.go handlers.go execUtil.go syncOutput.go syncMap.go
 ```
 
 ### Use grpc server with client
-use client.go as cli-like process to start\
+use client.go as cli-like process to start
 
 ```
 go run client/client.go start -cert cert.pem -key key.pem -command ./test_process.sh -host localhost
