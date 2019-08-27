@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/GeorgeLuo/grpc/models"
 	"github.com/gorilla/mux"
 )
 
@@ -19,7 +20,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ErrorMessage{nil, err.Error()})
+		json.NewEncoder(w).Encode(models.ErrorMessage{nil, err.Error()})
 		return
 	}
 
@@ -40,7 +41,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 	if taskID == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ErrorMessage{nil, "no task_id provided"})
+		json.NewEncoder(w).Encode(models.ErrorMessage{nil, "no task_id provided"})
 		return
 	}
 
@@ -49,7 +50,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 		// TODO handle different error cases
 		w.WriteHeader(http.StatusExpectationFailed)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ErrorMessage{&taskID, err.Error()})
+		json.NewEncoder(w).Encode(models.ErrorMessage{&taskID, err.Error()})
 		return
 	}
 
@@ -70,7 +71,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 	if command == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ErrorMessage{nil, "no command provided"})
+		json.NewEncoder(w).Encode(models.ErrorMessage{nil, "no command provided"})
 		return
 	}
 	RunCommandResponse, err := RunCommand(command)
@@ -80,7 +81,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 		// though this is not terribly illogical as a response
 		w.WriteHeader(http.StatusExpectationFailed)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(ErrorMessage{nil, err.Error()})
+		json.NewEncoder(w).Encode(models.ErrorMessage{nil, err.Error()})
 		return
 	}
 

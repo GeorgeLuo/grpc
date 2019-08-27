@@ -9,6 +9,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/GeorgeLuo/grpc/models"
 )
 
 // handle exec calls
@@ -29,9 +31,9 @@ func init() {
 }
 
 // GetProcessStatus is called to retrieve the details of a processes by task_id.
-func GetProcessStatus(taskID string) (*StatusResponse, error) {
+func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 
-	var statusResponse StatusResponse
+	var statusResponse models.StatusResponse
 	statusResponse.TaskID = taskID
 
 	var command *CommandWrapper
@@ -62,9 +64,9 @@ func GetProcessStatus(taskID string) (*StatusResponse, error) {
 }
 
 // RunCommand starts a process from command argument.
-func RunCommand(command string) (*StartResponse, error) {
+func RunCommand(command string) (*models.StartResponse, error) {
 
-	var startResponse StartResponse
+	var startResponse models.StartResponse
 	splitCommand := strings.Split(command, " ")
 
 	cmd := exec.Command(splitCommand[0], splitCommand[1:]...)
@@ -109,9 +111,9 @@ func intPtr(value int) *int {
 }
 
 // StopProcess is called to end a previously started process.
-func StopProcess(taskID string) (*StopResponse, error) {
+func StopProcess(taskID string) (*models.StopResponse, error) {
 
-	var stopResponse StopResponse
+	var stopResponse models.StopResponse
 
 	stopResponse.TaskID = taskID
 

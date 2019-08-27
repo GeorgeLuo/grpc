@@ -11,23 +11,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/GeorgeLuo/grpc/models"
 	"github.com/gorilla/mux"
 )
 
-// invalid status
-
+// TODO test cases
 // start long process, get statusResponse, wait until finished, get statusResponse
-
 // start non-existant process
-
 // start process without permission
-
 // start process that returns error code, get statusResponse
-
 // start long process, stop process, get statusResponse
-
 // stop with invalid task_id
-
 // stop already finished process
 
 // TestStatusWithInvalidTaskID tests case of invalid status
@@ -84,12 +78,13 @@ func TestStartProcessBasic(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	startResponse := &StartResponse{}
+	startResponse := &models.StartResponse{}
 	json.Unmarshal([]byte(rr.Body.String()), startResponse)
 	taskID := startResponse.TaskID
 
 	time.Sleep(1 * time.Second) // now check status
 
+	// TODO refactor repetitive test code
 	req, err := http.NewRequest("GET", "/status/"+taskID, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -105,7 +100,7 @@ func TestStartProcessBasic(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	statusResponse := &StatusResponse{}
+	statusResponse := &models.StatusResponse{}
 	json.Unmarshal([]byte(rr.Body.String()), statusResponse)
 
 	expectedStatusOutput := []string{"12345"}
@@ -154,7 +149,7 @@ func TestStopProcessBasic(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	startResponse := &StartResponse{}
+	startResponse := &models.StartResponse{}
 	json.Unmarshal([]byte(rr.Body.String()), startResponse)
 	taskID := startResponse.TaskID
 
@@ -177,7 +172,7 @@ func TestStopProcessBasic(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	stopResponse := &StopResponse{}
+	stopResponse := &models.StopResponse{}
 	json.Unmarshal([]byte(rr.Body.String()), stopResponse)
 
 	if *stopResponse.ExitCode != -1 {

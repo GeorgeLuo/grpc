@@ -4,10 +4,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -46,6 +47,6 @@ func main() {
 
 	// Listen to HTTPS connections with the server certificate and wait
 
-	// log.Fatal(server.ListenAndServeTLS("cert.pem", "key.pem"))
-	log.Fatal(server.ListenAndServe())
+	log.Fatal(server.ListenAndServeTLS("cert.pem", "key.pem"))
+	// log.Fatal(server.ListenAndServe())
 }
