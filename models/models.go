@@ -38,3 +38,18 @@ type ErrorMessage struct {
 	TaskID *string `json:"task_id,omitempty"`
 	Error  string  `json:"error,omitempty"`
 }
+
+// StartRequest structure encapsulates body fields for start enpoint.
+type StartRequest struct {
+	Command string `json:"command,omitempty"`
+}
+
+// StopRequest structure encapsulates body fields for stop enpoint.
+type StopRequest struct {
+	TaskID string `json:"task_id,omitempty"`
+}
+
+// StatusRequest structure encapsulates body fields for status enpoint.
+type StatusRequest struct {
+	TaskID string `json:"task_id,omitempty"`
+}

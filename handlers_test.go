@@ -27,15 +27,19 @@ import (
 // TestStatusWithInvalidTaskID tests case of invalid status
 func TestStatusWithInvalidTaskID(t *testing.T) {
 
-	req, err := http.NewRequest("GET", "/status/abc", nil)
+	var data = []byte(`{"task_id":"abc"}`)
+
+	req, err := http.NewRequest("POST", "/status", bytes.NewBuffer(data))
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	req.Header.Set("Content-Type", "application/json")
+
 	rr := httptest.NewRecorder()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/status/{task_id}", StatusHandler).Methods("GET")
+	r.HandleFunc("/status", StatusHandler).Methods("POST")
 
 	r.ServeHTTP(rr, req)
 
@@ -67,7 +71,8 @@ func TestStartProcessBasic(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	r := mux.NewRouter()
-	r.HandleFunc("/status/{task_id}", StatusHandler).Methods("GET")
+	r.HandleFunc("/status", StatusHandler).
+		Methods("POST")
 	r.HandleFunc("/start", StartHandler).
 		Methods("POST")
 
@@ -84,11 +89,14 @@ func TestStartProcessBasic(t *testing.T) {
 
 	time.Sleep(1 * time.Second) // now check status
 
-	// TODO refactor repetitive test code
-	req, err := http.NewRequest("GET", "/status/"+taskID, nil)
+	data = []byte(`{"task_id":"` + taskID + `"}`)
+
+	req, err := http.NewRequest("POST", "/status", bytes.NewBuffer(data))
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	req.Header.Set("Content-Type", "application/json")
 
 	rr = httptest.NewRecorder()
 
@@ -136,7 +144,6 @@ func TestStopProcessBasic(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/status/{task_id}", StatusHandler).Methods("GET")
 	r.HandleFunc("/start", StartHandler).
 		Methods("POST")
 	r.HandleFunc("/stop", StopHandler).

@@ -14,8 +14,8 @@ import (
 func main() {
 	fmt.Println("setting up handlers ...")
 	router := mux.NewRouter()
-	router.HandleFunc("/status/{task_id}", StatusHandler).
-		Methods("GET")
+	router.HandleFunc("/status", StatusHandler).
+		Methods("POST")
 	router.HandleFunc("/start", StartHandler).
 		Methods("POST")
 	router.HandleFunc("/stop", StopHandler).

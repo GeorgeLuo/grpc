@@ -30,19 +30,19 @@ curl   -X POST   http://localhost:8443/stop   -H 'Content-Type: application/json
 ```
 test a message retrieving GET
 ```
-curl   http://localhost:8080/status/987f769fca40-3635
+curl   -X POST   http://localhost:8443/status   -H 'Content-Type: application/json'   -d '{"task_id":"987f769fca40-3635"}'
 ```
 
 use client.go as cli-like process to start
 
 ```
-go run client/client.go start -cert cert.pem -key key.pem -command ./test_process.sh -host localhost
+go run client/* start -cert cert.pem -key key.pem -command ./test_process.sh -host localhost
 ```
 to stop
 ```
-go run client/client.go stop -cert cert.pem -key key.pem -task_id "987f769fca40-3635" -host localhost
+go run client/* stop -cert cert.pem -key key.pem -task_id "987f769fca40-3635" -host localhost
 ```
 to get status
 ```
-go run client/client.go status -cert cert.pem -key key.pem -task_id "987f769fca40-3635" -host localhost
+go run client/* status -cert cert.pem -key key.pem -task_id "987f769fca40-3635" -host localhost
 ```

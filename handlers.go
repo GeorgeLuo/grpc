@@ -6,21 +6,23 @@ import (
 	"net/http"
 
 	"github.com/GeorgeLuo/grpc/models"
-	"github.com/gorilla/mux"
 )
 
 // StatusHandler returns status of running service.
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
+	body, _ := ioutil.ReadAll(r.Body)
 
-	vars := mux.Vars(r)
-	taskID := vars["task_id"]
+	bodyMap := make(map[string]string)
+	json.Unmarshal(body, &bodyMap)
+
+	taskID := bodyMap["task_id"]
 
 	ProcessStatusResponse, err := GetProcessStatus(taskID)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{nil, err.Error()})
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: err.Error()})
 		return
 	}
 
@@ -41,7 +43,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 	if taskID == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{nil, "no task_id provided"})
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: "no task_id provided"})
 		return
 	}
 
@@ -50,7 +52,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 		// TODO handle different error cases
 		w.WriteHeader(http.StatusExpectationFailed)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{&taskID, err.Error()})
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: &taskID, Error: err.Error()})
 		return
 	}
 
@@ -71,7 +73,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 	if command == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{nil, "no command provided"})
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: "no command provided"})
 		return
 	}
 	RunCommandResponse, err := RunCommand(command)
@@ -81,7 +83,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 		// though this is not terribly illogical as a response
 		w.WriteHeader(http.StatusExpectationFailed)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{nil, err.Error()})
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: err.Error()})
 		return
 	}
 
