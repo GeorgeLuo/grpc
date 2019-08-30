@@ -1,62 +1,150 @@
 package main
 
 import (
-  "os/exec"
-  "os"
-  "log"
-  "strconv"
+	"errors"
+	"io"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+
+	"github.com/GeorgeLuo/grpc/models"
 )
 
 // handle exec calls
 
+// TODO prune finished tasks when some max map size is reached
 
-// maps task_id to cmd objects
-var TaskIdCmdMap = make(map[string]*exec.Cmd)
+var taskIDCommandMap SyncMap
+var hostname string
 
-// TODO define Command class
+func init() {
+	var err error
+	hostname, err = os.Hostname()
+	if err != nil {
+		panic(err)
+	}
 
-func GetProcessStatus(task_id string) int {
-  log.Printf("GetProcessStatus task_id=%s, pid=%d, ProcessState=%d", task_id, TaskIdCmdMap[task_id].Process.Pid, TaskIdCmdMap[task_id].ProcessState)
-  return TaskIdCmdMap[task_id].ProcessState.ExitCode()
+	taskIDCommandMap = NewMap()
 }
 
-// start process
-func RunCommand(command string) string {
-  log.Printf("command=%s", command)
-  cmd := exec.Command(command)
-  cmd.Stdout = os.Stdout
-  err := cmd.Start()
-  if err != nil {
-     log.Fatal(err)
-  }
+// GetProcessStatus is called to retrieve the details of a processes by task_id.
+func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 
-  go func() {
-      log.Printf("pre-wait ProcessState=%v", cmd.ProcessState.ExitCode())
-      err = cmd.Wait()
-      log.Printf("Command finished with error: %v", err)
+	var statusResponse models.StatusResponse
+	statusResponse.TaskID = taskID
 
-      // TODO mark cmd as finished in subroutine
-  }()
-  hostname, err := os.Hostname()
+	var command *CommandWrapper
+	var ok bool
 
-  // for now make this for unique task_id
-  task_id := hostname + "-" + strconv.Itoa(cmd.Process.Pid)
-  TaskIdCmdMap[task_id] = cmd
+	// validate task_id
+	if command, ok = taskIDCommandMap.Get(taskID); !ok {
+		return nil, errors.New("invalid task_id")
+	}
 
-  log.Printf("RunCommand task_id=%s, pid=%d", task_id, TaskIdCmdMap[task_id].Process.Pid)
+	// TODO refactor this into un/finished process
+	statusResponse.TaskID = taskID
+	statusResponse.StartTime = new(time.Time)
+	*statusResponse.StartTime = command.StartTime
+	statusResponse.ExecError = command.GetExecError()
+	statusResponse.Finished = new(bool)
+	if command.GetEndTime() != nil {
+		*statusResponse.Finished = true
+		statusResponse.EndTime = new(time.Time)
+		statusResponse.EndTime = command.GetEndTime()
+		statusResponse.ExitCode = new(int)
+		*statusResponse.ExitCode = command.GetExitCode()
+	}
 
-  return task_id
+	statusResponse.Output = command.StdoutBuff.Lines()
+
+	return &statusResponse, nil
 }
 
-// @param pid - stops process with this pid
-func StopProcess(task_id string) int {
+// RunCommand starts a process from command argument.
+func RunCommand(command string) (*models.StartResponse, error) {
 
-  // check if already finished
+	var startResponse models.StartResponse
+	splitCommand := strings.Split(command, " ")
 
-  err := TaskIdCmdMap[task_id].Process.Kill()
-  if err != nil {
-     log.Fatal(err)
-  }
-  log.Printf("StopProcess task_id=%s, pid=%d", task_id, TaskIdCmdMap[task_id].Process.Pid)
-  return TaskIdCmdMap[task_id].ProcessState.ExitCode()
+	cmd := exec.Command(splitCommand[0], splitCommand[1:]...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	outBuf := NewOutput()
+	cmd.Stdout = io.MultiWriter(os.Stdout, outBuf)
+
+	err := cmd.Start()
+
+	if err != nil {
+		return nil, err
+	}
+
+	pgid, err := syscall.Getpgid(cmd.Process.Pid)
+
+	if err != nil {
+		return nil, err
+	}
+
+	taskID := hostname + "-" + strconv.Itoa(pgid) // TODO handle if Process or Pid nil
+	startResponse.TaskID = taskID
+
+	taskIDCommandMap.Put(taskID, NewCommandWrapper(cmd, outBuf))
+
+	go func() {
+		// TODO add append error to CommandWrapper, impl accessors and setters
+		waitErr := cmd.Wait()
+		cw, _ := taskIDCommandMap.Get(taskID)
+		if waitErr != nil {
+			cw.SetExecError(waitErr.Error())
+		}
+		cw.SetExitCode(cmd.ProcessState.ExitCode())
+		cw.SetEndTime(time.Now())
+	}()
+
+	return &startResponse, nil
+}
+
+func intPtr(value int) *int {
+	return &value
+}
+
+// StopProcess is called to end a previously started process.
+func StopProcess(taskID string) (*models.StopResponse, error) {
+
+	var stopResponse models.StopResponse
+
+	stopResponse.TaskID = taskID
+
+	var command *CommandWrapper
+	var ok bool
+
+	// if task_id invalid, return error.
+	if command, ok = taskIDCommandMap.Get(taskID); !ok {
+		return &stopResponse, errors.New("invalid task_id")
+	}
+
+	if command.GetEndTime() != nil {
+		stopResponse.ExitCode = intPtr(command.GetExitCode())
+		return &stopResponse, errors.New("process already finished")
+	}
+
+	// send stop signal first
+	// TODO verify flat processes work with gpid as well
+
+	pgid, _ := syscall.Getpgid(command.Command.Process.Pid)
+	err := syscall.Kill(-pgid, syscall.SIGQUIT)
+
+	if err != nil && err != syscall.EPERM {
+
+		err = syscall.Kill(-pgid, syscall.SIGKILL)
+		if err != nil {
+			return &stopResponse, err
+		}
+	}
+
+	stopResponse.ExitCode = intPtr(command.GetExitCode())
+
+	return &stopResponse, err
 }

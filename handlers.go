@@ -1,85 +1,93 @@
-
 package main
+
 import (
-	"net/http"
-	"github.com/gorilla/mux"
-	"log"
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
+
+	"github.com/GeorgeLuo/grpc/models"
 )
 
-// TODO add message fields
-
-type StatusResponse struct {
-    Task_id string `json:"task_id"`
-    Status int `json:"status"`
-}
-
-type StartResponse struct {
-    Task_id string `json:"task_id"`
-}
-
-type StopResponse struct {
-    Task_id string `json:"task_id"`
-		ExitCode int `json:"exit_code"`
-}
-
-// path param task_id : identifier of task query
-// returns status of running service
+// StatusHandler returns status of running service.
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
+	body, _ := ioutil.ReadAll(r.Body)
 
-	vars := mux.Vars(r)
-	task_id := vars["task_id"]
+	bodyMap := make(map[string]string)
+	json.Unmarshal(body, &bodyMap)
 
-	status := GetProcessStatus(task_id)
-	log.Printf("task_id=%s, status=%d", task_id, status)
+	taskID := bodyMap["task_id"]
 
-	responseBody := StatusResponse{task_id, status}
-	w.WriteHeader(200)
+	ProcessStatusResponse, err := GetProcessStatus(taskID)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: err.Error()})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(responseBody)
+	json.NewEncoder(w).Encode(ProcessStatusResponse)
 }
 
+// StopHandler handles the logic of a call to /stop to stop a process.
 func StopHandler(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
-	log.Printf("body=%s", body)
 
-	body_map := make(map[string]string)
-	json.Unmarshal(body, &body_map)
+	bodyMap := make(map[string]string)
+	json.Unmarshal(body, &bodyMap)
 
-	task_id := body_map["task_id"]
-	log.Printf("task_id=%s", task_id)
+	taskID := bodyMap["task_id"]
 
-	// TODO define and handle errors
-	output := StopProcess(task_id)
+	if taskID == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: "no task_id provided"})
+		return
+	}
 
-	log.Printf("task_id=%s, status=%s", task_id, output)
+	StopResponse, err := StopProcess(taskID)
+	if err != nil {
+		// TODO handle different error cases
+		w.WriteHeader(http.StatusExpectationFailed)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: &taskID, Error: err.Error()})
+		return
+	}
 
-	responseBody := StartResponse{task_id}
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(responseBody)
-
+	json.NewEncoder(w).Encode(StopResponse)
 }
 
-// return pid
+// StartHandler handles the logic of a call to /start to start a process.
 func StartHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(r.Body)
-	log.Printf("body=%s", body)
 
-	body_map := make(map[string]string)
-	json.Unmarshal(body, &body_map)
+	bodyMap := make(map[string]string)
+	json.Unmarshal(body, &bodyMap)
 
-	command := body_map["command"]
+	command := bodyMap["command"]
+	if command == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: "no command provided"})
+		return
+	}
+	RunCommandResponse, err := RunCommand(command)
 
-	// TODO define and handle errors
-	task_id := RunCommand(command)
+	if err != nil {
+		// TODO handle different error cases, namely separate invalid task_id error code
+		// though this is not terribly illogical as a response
+		w.WriteHeader(http.StatusExpectationFailed)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: err.Error()})
+		return
+	}
 
-	log.Printf("command=%s, task_id=%s", command, task_id)
-
-	responseBody := StartResponse{task_id}
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(responseBody)
+	json.NewEncoder(w).Encode(RunCommandResponse)
 }

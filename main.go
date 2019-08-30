@@ -3,18 +3,19 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+
 	"github.com/gorilla/mux"
-	"fmt"
 )
 
 func main() {
 	fmt.Println("setting up handlers ...")
 	router := mux.NewRouter()
-	router.HandleFunc("/status/{task_id}", StatusHandler).
-		Methods("GET")
+	router.HandleFunc("/status", StatusHandler).
+		Methods("POST")
 	router.HandleFunc("/start", StartHandler).
 		Methods("POST")
 	router.HandleFunc("/stop", StopHandler).
@@ -39,13 +40,13 @@ func main() {
 
 	// Create a Server instance to listen on port 8443 with the TLS config
 	server := &http.Server{
-		Handler: router,
+		Handler:   router,
 		Addr:      "0.0.0.0:8443",
 		TLSConfig: tlsConfig,
 	}
 
 	// Listen to HTTPS connections with the server certificate and wait
 
-	// log.Fatal(server.ListenAndServeTLS("cert.pem", "key.pem"))
-	log.Fatal(server.ListenAndServe())
+	log.Fatal(server.ListenAndServeTLS("cert.pem", "key.pem"))
+	// log.Fatal(server.ListenAndServe())
 }
