@@ -12,6 +12,7 @@ import (
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 
+	// TODO: make use of request struct from models.go
 	bodyMap := make(map[string]string)
 	json.Unmarshal(body, &bodyMap)
 
@@ -20,9 +21,8 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	ProcessStatusResponse, err := GetProcessStatus(taskID)
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{Error: err.Error()})
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{TaskID: &taskID, Error: err.Error()})
 		return
 	}
 
@@ -35,24 +35,23 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 func StopHandler(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 
+	// TODO: make use of request struct from models.go
 	bodyMap := make(map[string]string)
 	json.Unmarshal(body, &bodyMap)
 
 	taskID := bodyMap["task_id"]
 
 	if taskID == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{Error: "no task_id provided"})
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: "no task_id provided"})
 		return
 	}
 
 	StopResponse, err := StopProcess(taskID)
 	if err != nil {
 		// TODO handle different error cases
-		w.WriteHeader(http.StatusExpectationFailed)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: &taskID, Error: err.Error()})
+		replyWithError(w, http.StatusExpectationFailed,
+			models.ErrorMessage{TaskID: &taskID, Error: err.Error()})
 		return
 	}
 
@@ -66,28 +65,36 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(r.Body)
 
+	// TODO: make use of request struct from models.go
 	bodyMap := make(map[string]string)
 	json.Unmarshal(body, &bodyMap)
 
 	command := bodyMap["command"]
 	if command == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{Error: "no command provided"})
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: "no command provided"})
 		return
 	}
+
 	RunCommandResponse, err := RunCommand(command)
 
 	if err != nil {
-		// TODO handle different error cases, namely separate invalid task_id error code
-		// though this is not terribly illogical as a response
-		w.WriteHeader(http.StatusExpectationFailed)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{Error: err.Error()})
+		// TODO handle different error cases, namely separate invalid task_id
+		// error code though this is not terribly illogical as a response
+		replyWithError(w, http.StatusExpectationFailed,
+			models.ErrorMessage{Error: err.Error()})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(RunCommandResponse)
+}
+
+// helper function to return error response
+func replyWithError(writer http.ResponseWriter,
+	statusCode int, error models.ErrorMessage) {
+	writer.WriteHeader(statusCode)
+	writer.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(writer).Encode(error)
 }
