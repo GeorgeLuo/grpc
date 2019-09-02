@@ -17,7 +17,7 @@ func StartRequest(body interface{}, host string) (*http.Request, error) {
 	if err != nil {
 		return nil, errors.New("malformed body")
 	}
-	request, err := http.NewRequest("POST", urlString, bytes.NewBuffer(byteBody))
+	request, err := http.NewRequest("POST", urlString, bytes.NewReader(byteBody))
 	request.Header.Set("Content-Type", "application/json")
 	return request, err
 }
@@ -29,7 +29,7 @@ func StopRequest(body interface{}, host string) (*http.Request, error) {
 	if err != nil {
 		return nil, errors.New("malformed body")
 	}
-	request, err := http.NewRequest("POST", urlString, bytes.NewBuffer(byteBody))
+	request, err := http.NewRequest("POST", urlString, bytes.NewReader(byteBody))
 	request.Header.Set("Content-Type", "application/json")
 	return request, err
 }
@@ -41,7 +41,7 @@ func StatusRequest(body interface{}, host string) (*http.Request, error) {
 	if err != nil {
 		return nil, errors.New("malformed body")
 	}
-	request, err := http.NewRequest("POST", urlString, bytes.NewBuffer(byteBody))
+	request, err := http.NewRequest("POST", urlString, bytes.NewReader(byteBody))
 	request.Header.Set("Content-Type", "application/json")
 	return request, err
 }

@@ -50,9 +50,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	client, err = newClient(certFile, keyFile, certFile)
 	if err != nil {
 		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	client, err = newClient(certFile, keyFile, certFile)
+	if err != nil {
+		fmt.Printf("%s command failed with error: %s", endpoint, err.Error())
 		os.Exit(1)
 	}
 
@@ -65,7 +70,7 @@ func main() {
 	defer r.Body.Close()
 	responseBody, responseError := ioutil.ReadAll(r.Body)
 	if responseError != nil {
-		fmt.Println(err.Error())
+		fmt.Println(responseError.Error())
 		os.Exit(1)
 	}
 

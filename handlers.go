@@ -22,7 +22,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: err.Error()})
+		json.NewEncoder(w).Encode(models.ErrorMessage{Error: err.Error()})
 		return
 	}
 
@@ -43,7 +43,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 	if taskID == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: "no task_id provided"})
+		json.NewEncoder(w).Encode(models.ErrorMessage{Error: "no task_id provided"})
 		return
 	}
 
@@ -73,7 +73,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 	if command == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: "no command provided"})
+		json.NewEncoder(w).Encode(models.ErrorMessage{Error: "no command provided"})
 		return
 	}
 	RunCommandResponse, err := RunCommand(command)
@@ -83,7 +83,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 		// though this is not terribly illogical as a response
 		w.WriteHeader(http.StatusExpectationFailed)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(models.ErrorMessage{TaskID: nil, Error: err.Error()})
+		json.NewEncoder(w).Encode(models.ErrorMessage{Error: err.Error()})
 		return
 	}
 
