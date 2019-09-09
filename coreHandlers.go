@@ -8,7 +8,12 @@ import (
 	"github.com/GeorgeLuo/grpc/models"
 )
 
-// StatusHandler returns status of running service.
+// SystemHandler returns a
+func SystemHandler(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// StatusHandler returns status of running service by TaskID
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	body, _ := ioutil.ReadAll(r.Body)
 
@@ -89,6 +94,27 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(RunCommandResponse)
+}
+
+// BatchStatusHandler returns the process status corresponding to each TaskID
+// from an array of TaskIDs. TODO: set input limit or timeout.
+func BatchStatusHandler(w http.ResponseWriter, r *http.Request) {
+	body, _ := ioutil.ReadAll(r.Body)
+
+	// TODO: make use of request struct from models.go
+	var statusBatchRequest models.StatusBatchRequest
+
+	json.Unmarshal(body, &statusBatchRequest)
+	BatchStatusResponse := GetBatchProcessStatus(statusBatchRequest.TaskIDs)
+
+	if len(BatchStatusResponse.StatusResponses) == 0 {
+		w.WriteHeader(http.StatusExpectationFailed)
+	} else {
+		w.WriteHeader(http.StatusMultiStatus)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(BatchStatusResponse)
 }
 
 // helper function to return error response

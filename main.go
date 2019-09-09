@@ -16,6 +16,8 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/status", StatusHandler).
 		Methods("POST")
+	router.HandleFunc("/batch/status", BatchStatusHandler).
+		Methods("POST")
 	router.HandleFunc("/start", StartHandler).
 		Methods("POST")
 	router.HandleFunc("/stop", StopHandler).

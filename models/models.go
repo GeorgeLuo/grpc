@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+// Tableble is an interface defined for structs with methods to extract
+// tablewriter compliant collections.
+type Tableble interface {
+	Data() map[string]string
+}
+
 // request and response structures
 
 // StatusResponse is a structure to capture return for /status call.
@@ -39,15 +45,29 @@ type ErrorMessage struct {
 
 // StartRequest structure encapsulates body fields for start enpoint.
 type StartRequest struct {
-	Command string `json:"command,omitempty"`
+	Command string `json:"command"`
 }
 
 // StopRequest structure encapsulates body fields for stop enpoint.
 type StopRequest struct {
-	TaskID string `json:"task_id,omitempty"`
+	TaskID string `json:"task_id"`
 }
 
 // StatusRequest structure encapsulates body fields for status enpoint.
 type StatusRequest struct {
-	TaskID string `json:"task_id,omitempty"`
+	TaskID string `json:"task_id"`
+}
+
+// StatusBatchRequest structure encapsulates body fields for status batch
+// endpoint as an array of TaskID values.
+type StatusBatchRequest struct {
+	TaskIDs []string `json:"task_ids"`
+}
+
+// StatusBatchResponse structure encapsulates response of the status batch
+// endpoint as an array of status responses and an array of their corresponding
+// errors.
+type StatusBatchResponse struct {
+	StatusResponses []StatusResponse `json:"status_responses"`
+	Errors          []ErrorMessage   `json:"errors"`
 }

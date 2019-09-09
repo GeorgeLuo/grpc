@@ -5,12 +5,34 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/GeorgeLuo/grpc/models"
 )
 
 // TODO persistent connection
 // TODO: add client test code for setting up tls
+
+type arrayFlags []string
+
+func (flags *arrayFlags) String() string {
+	var sb strings.Builder
+	first := true
+	for _, flag := range *flags {
+		if !first {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(flag)
+		first = false
+	}
+
+	return sb.String()
+}
+
+func (flags *arrayFlags) Set(value string) error {
+	*flags = append(*flags, value)
+	return nil
+}
 
 func main() {
 
@@ -33,12 +55,14 @@ func main() {
 	stopHost := stopCommand.String("host", "localhost", "endpoint of request")
 	stopTaskID := stopCommand.String("task_id", "", "task_id of process")
 
+	var batchTaskID arrayFlags
+
 	statusCommand := flag.NewFlagSet("status", flag.ExitOnError)
 	statusCertFile := statusCommand.String("cert", "cert.pem", "path to cert file")
 	statusCaCertFile := statusCommand.String("cacert", "", "path to cacert file")
 	statusKeyFile := statusCommand.String("key", "key.pem", "path to key file")
 	statusHost := statusCommand.String("host", "localhost", "endpoint of request")
-	statusTaskID := statusCommand.String("task_id", "", "task_id of process")
+	statusCommand.Var(&batchTaskID, "task_id", "task_id of process")
 
 	switch os.Args[1] {
 	case "start":
@@ -56,6 +80,7 @@ func main() {
 	var permission Permission
 
 	var err error
+	var batchKey *string
 
 	if startCommand.Parsed() {
 		permission = Permission{*startCertFile, *startKeyFile, *startCaCertFile}
@@ -65,7 +90,13 @@ func main() {
 		request, err = StopRequest(models.StopRequest{TaskID: *stopTaskID}, *stopHost)
 	} else if statusCommand.Parsed() {
 		permission = Permission{*statusCertFile, *statusKeyFile, *statusCaCertFile}
-		request, err = StatusRequest(models.StatusRequest{TaskID: *statusTaskID}, *statusHost)
+		if len(batchTaskID) > 1 {
+			batchKey = new(string)
+			*batchKey = "status_responses"
+			request, err = StatusBatchRequest(models.StatusBatchRequest{TaskIDs: batchTaskID}, *statusHost)
+		} else {
+			request, err = StatusRequest(models.StatusRequest{TaskID: batchTaskID[0]}, *statusHost)
+		}
 	} else {
 		fmt.Println("error parsing arguments")
 		os.Exit(1)
@@ -76,11 +107,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	responseBody, err := SendRequest(permission, request)
+	var responseBody *models.StatusResponse
+	// var responseBody interface{}
+
+	// responseBody, err := SendRequest(permission, request)
+	err = SendRequest(permission, request, &responseBody)
 	if err != nil {
 		fmt.Printf("error sending request: [%s]\n", err.Error())
 		os.Exit(1)
 	}
 
-	fmt.Printf("%s", *responseBody)
+	// PrintTable(batchKey, responseBody, os.Stdout)
+	fmt.Println(responseBody)
 }

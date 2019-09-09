@@ -30,6 +30,26 @@ func init() {
 	taskIDCommandMap = NewMap()
 }
 
+// GetBatchProcessStatus uses the GetProcessStatus for an array of taskIDs and
+// returns an array of conrresponding status responses. This could be optimized
+// by batch access to CommandWrapper to save mutex operations.
+func GetBatchProcessStatus(taskIDs []string) *models.StatusBatchResponse {
+	statuses := []models.StatusResponse{}
+	errs := []models.ErrorMessage{}
+
+	for _, taskID := range taskIDs {
+		processStatusResponse, err := GetProcessStatus(taskID)
+		if err != nil {
+			errs = append(errs, models.ErrorMessage{TaskID: &taskID, Error: err.Error()})
+		} else {
+			statuses = append(statuses, *processStatusResponse)
+		}
+	}
+
+	return &models.StatusBatchResponse{StatusResponses: statuses,
+		Errors: errs}
+}
+
 // GetProcessStatus retrieves the status of the process specified with taskID.
 func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 

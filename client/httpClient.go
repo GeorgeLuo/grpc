@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 )
@@ -26,29 +27,34 @@ func (perm *Permission) GetCaCert() string {
 
 // SendRequest encapsulates the entire process of initializing the client
 // and sending a request, returning the byte body of the response.
-func SendRequest(permission Permission, request *http.Request) (*[]byte, error) {
+func SendRequest(permission Permission,
+	// request *http.Request, target interface{}) (*[]byte, error) {
+	request *http.Request, target interface{}) error {
 
 	var err error
 
 	if client == nil {
 		client, err = newClient(permission)
 		if err != nil {
-			return nil, err
+			// return nil, err
+			return err
 		}
 	}
 
 	r, err := client.Do(request)
 	if err != nil {
-		return nil, err
+		// return nil, err
+		return err
 	}
 
 	defer r.Body.Close()
 	responseBody, responseError := ioutil.ReadAll(r.Body)
 	if responseError != nil {
-		return nil, responseError
+		// return nil, responseError
+		return responseError
 	}
-
-	return &responseBody, nil
+	return json.Unmarshal(responseBody, target)
+	// return &responseBody, nil
 }
 
 // newClient creates a new tls client from key and certs

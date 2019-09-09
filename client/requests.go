@@ -40,6 +40,16 @@ func statusURL(host string) string {
 	return "https://" + host + ":8443/status"
 }
 
+// StatusBatchRequest returns a request object to retrieve status of a process
+// using /status endpoint.
+func StatusBatchRequest(request models.StatusBatchRequest, host string) (*http.Request, error) {
+	return buildRequest(request, batchStatusURL(host))
+}
+
+func batchStatusURL(host string) string {
+	return "https://" + host + ":8443/batch/status"
+}
+
 func buildRequest(request interface{}, urlString string) (*http.Request, error) {
 	byteBody, err := json.Marshal(request)
 	if err != nil {
