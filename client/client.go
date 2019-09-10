@@ -40,31 +40,48 @@ func main() {
 	statusHost := statusCommand.String("host", "localhost", "endpoint of request")
 	statusTaskID := statusCommand.String("task_id", "", "task_id of process")
 
+	var err error
+
 	switch os.Args[1] {
 	case "start":
-		startCommand.Parse(os.Args[2:])
+		err = startCommand.Parse(os.Args[2:])
 	case "stop":
-		stopCommand.Parse(os.Args[2:])
+		err = stopCommand.Parse(os.Args[2:])
 	case "status":
-		statusCommand.Parse(os.Args[2:])
+		err = statusCommand.Parse(os.Args[2:])
 	default:
 		fmt.Println("invalid command")
+		os.Exit(1)
+	}
+
+	if err != nil {
+		fmt.Printf("error parsing request: [%s]\n", err.Error())
 		os.Exit(1)
 	}
 
 	var request *http.Request
 	var permission Permission
 
-	var err error
-
 	if startCommand.Parsed() {
-		permission = Permission{*startCertFile, *startKeyFile, *startCaCertFile}
+		permission = Permission{
+			CertFile:   *startCertFile,
+			KeyFile:    *startKeyFile,
+			CaCertFile: *startCaCertFile,
+		}
 		request, err = StartRequest(models.StartRequest{Command: *startExec}, *startHost)
 	} else if stopCommand.Parsed() {
-		permission = Permission{*stopCertFile, *stopKeyFile, *stopCaCertFile}
+		permission = Permission{
+			CertFile:   *stopCertFile,
+			KeyFile:    *stopKeyFile,
+			CaCertFile: *stopCaCertFile,
+		}
 		request, err = StopRequest(models.StopRequest{TaskID: *stopTaskID}, *stopHost)
 	} else if statusCommand.Parsed() {
-		permission = Permission{*statusCertFile, *statusKeyFile, *statusCaCertFile}
+		permission = Permission{
+			CertFile:   *statusCertFile,
+			KeyFile:    *statusKeyFile,
+			CaCertFile: *statusCaCertFile,
+		}
 		request, err = StatusRequest(models.StatusRequest{TaskID: *statusTaskID}, *statusHost)
 	} else {
 		fmt.Println("error parsing arguments")

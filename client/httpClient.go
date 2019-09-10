@@ -11,17 +11,17 @@ var client *http.Client
 
 // Permission encapsulates the tls configurations.
 type Permission struct {
-	CertFile string
-	KeyFile  string
-	CaCert   string
+	CertFile   string
+	KeyFile    string
+	CaCertFile string
 }
 
 // GetCaCert returns the CertFile if CaCert is empty.
 func (perm *Permission) GetCaCert() string {
-	if perm.CaCert == "" {
+	if perm.CaCertFile == "" {
 		return perm.CertFile
 	}
-	return perm.CaCert
+	return perm.CaCertFile
 }
 
 // SendRequest encapsulates the entire process of initializing the client

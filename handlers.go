@@ -10,11 +10,21 @@ import (
 
 // StatusHandler returns status of running service.
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
-	body, _ := ioutil.ReadAll(r.Body)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: err.Error()})
+		return
+	}
 
 	// TODO: make use of request struct from models.go
 	bodyMap := make(map[string]string)
-	json.Unmarshal(body, &bodyMap)
+	err = json.Unmarshal(body, &bodyMap)
+	if err != nil {
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: err.Error()})
+		return
+	}
 
 	taskID := bodyMap["task_id"]
 
@@ -33,11 +43,21 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 
 // StopHandler handles the logic of a call to /stop to stop a process.
 func StopHandler(w http.ResponseWriter, r *http.Request) {
-	body, _ := ioutil.ReadAll(r.Body)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: err.Error()})
+		return
+	}
 
 	// TODO: make use of request struct from models.go
 	bodyMap := make(map[string]string)
-	json.Unmarshal(body, &bodyMap)
+	err = json.Unmarshal(body, &bodyMap)
+	if err != nil {
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: err.Error()})
+		return
+	}
 
 	taskID := bodyMap["task_id"]
 
@@ -63,11 +83,16 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 // StartHandler handles the logic of a call to /start to start a process.
 func StartHandler(w http.ResponseWriter, r *http.Request) {
 
-	body, _ := ioutil.ReadAll(r.Body)
+	body, err := ioutil.ReadAll(r.Body)
 
 	// TODO: make use of request struct from models.go
 	bodyMap := make(map[string]string)
-	json.Unmarshal(body, &bodyMap)
+	err = json.Unmarshal(body, &bodyMap)
+	if err != nil {
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: err.Error()})
+		return
+	}
 
 	command := bodyMap["command"]
 	if command == "" {

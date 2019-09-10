@@ -122,8 +122,7 @@ func startProcess(t *testing.T, command string,
 	body := new(bytes.Buffer)
 	json.NewEncoder(body).Encode(models.StartRequest{Command: command})
 
-	startRequest, err := http.NewRequest("POST", "/start",
-		bytes.NewBuffer(body.Bytes()))
+	startRequest, err := http.NewRequest("POST", "/start", body)
 
 	if err != nil {
 		t.Fatal(err)
@@ -133,7 +132,10 @@ func startProcess(t *testing.T, command string,
 
 	r.ServeHTTP(rr, startRequest)
 
-	json.Unmarshal([]byte(rr.Body.String()), startResponse)
+	err = json.Unmarshal([]byte(rr.Body.String()), startResponse)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return rr.Code
 }
 
@@ -144,8 +146,7 @@ func stopProcess(t *testing.T, taskID string,
 	body := new(bytes.Buffer)
 	json.NewEncoder(body).Encode(models.StopRequest{TaskID: taskID})
 
-	stopRequest, err := http.NewRequest("POST", "/stop",
-		bytes.NewBuffer(body.Bytes()))
+	stopRequest, err := http.NewRequest("POST", "/stop", body)
 
 	if err != nil {
 		t.Fatal(err)
@@ -155,7 +156,10 @@ func stopProcess(t *testing.T, taskID string,
 
 	r.ServeHTTP(rr, stopRequest)
 
-	json.Unmarshal([]byte(rr.Body.String()), stopResponse)
+	err = json.Unmarshal([]byte(rr.Body.String()), stopResponse)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return rr.Code
 }
 
@@ -166,8 +170,7 @@ func processStatus(t *testing.T, taskID string,
 	body := new(bytes.Buffer)
 	json.NewEncoder(body).Encode(models.StatusRequest{TaskID: taskID})
 
-	statusRequest, err := http.NewRequest("POST", "/status",
-		bytes.NewBuffer(body.Bytes()))
+	statusRequest, err := http.NewRequest("POST", "/status", body)
 
 	if err != nil {
 		t.Fatal(err)
@@ -177,7 +180,10 @@ func processStatus(t *testing.T, taskID string,
 
 	r.ServeHTTP(rr, statusRequest)
 
-	json.Unmarshal([]byte(rr.Body.String()), statusResponse)
+	err = json.Unmarshal([]byte(rr.Body.String()), statusResponse)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return rr.Code
 }
 
@@ -195,7 +201,10 @@ func getExpectedError(t *testing.T, endpoint string, body []byte,
 
 	r.ServeHTTP(rr, request)
 
-	json.Unmarshal([]byte(rr.Body.String()), errorResponse)
+	err = json.Unmarshal([]byte(rr.Body.String()), errorResponse)
+	if err != nil {
+		t.Fatal(err)
+	}
 	return rr.Code
 }
 

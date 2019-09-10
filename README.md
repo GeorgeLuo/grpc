@@ -12,7 +12,7 @@ chmod +x generate-keys.sh
 ```
 Initialize dev environment
 ```
-sudo docker run --volume "$(pwd)":/go/src/github.com/GeorgeLuo/grpc --interactive --tty --publish 8443:8443 --net=host grpc
+sudo docker run --volume "$(pwd)":/go/src/github.com/GeorgeLuo/grpc --interactive --tty --publish 8443:8443 grpc
 ```
 Run go server, exposed to port 8443
 ```
@@ -48,5 +48,5 @@ curl   -X POST  --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem  https
 ```
 test a message retrieving GET
 ```
-curl   -X POST   http://localhost:8443/status   -H 'Content-Type: application/json'   -d '{"task_id":"987f769fca40-3635"}'
+curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https://localhost:8443/status   -H 'Content-Type: application/json'   -d '{"task_id":"987f769fca40-3635"}'
 ```
