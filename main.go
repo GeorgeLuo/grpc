@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,7 +11,7 @@ import (
 )
 
 func main() {
-	fmt.Println("setting up handlers ...")
+	log.Println("setting up handlers ...")
 	router := mux.NewRouter()
 	router.HandleFunc("/status", StatusHandler).
 		Methods("POST")

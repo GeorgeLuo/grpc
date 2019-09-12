@@ -7,8 +7,6 @@ import (
 	"net/http"
 )
 
-var client *http.Client
-
 // Permission encapsulates the tls configurations.
 type Permission struct {
 	CertFile   string
@@ -24,35 +22,16 @@ func (perm *Permission) GetCaCert() string {
 	return perm.CaCertFile
 }
 
-// SendRequest encapsulates the entire process of initializing the client
-// and sending a request, returning the byte body of the response.
-func SendRequest(permission Permission, request *http.Request) (*[]byte, error) {
-
-	var err error
-
-	if client == nil {
-		client, err = newClient(permission)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	r, err := client.Do(request)
-	if err != nil {
-		return nil, err
-	}
-
-	defer r.Body.Close()
-	responseBody, responseError := ioutil.ReadAll(r.Body)
-	if responseError != nil {
-		return nil, responseError
-	}
-
-	return &responseBody, nil
+// TLSClient is an extension of the go default http client. This abstraction
+// exists for future changes when the underlying client may need to be replaced
+// for additional features
+type TLSClient struct {
+	client http.Client
 }
 
-// newClient creates a new tls client from key and certs
-func newClient(permission Permission) (*http.Client, error) {
+// newTLSClient creates a new tls client from key and certs provided by
+// permission object
+func newTLSClient(permission Permission) (*TLSClient, error) {
 
 	cert, err := tls.LoadX509KeyPair(permission.CertFile, permission.KeyFile)
 	if err != nil {
@@ -67,12 +46,34 @@ func newClient(permission Permission) (*http.Client, error) {
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
 
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs:      caCertPool,
-				Certificates: []tls.Certificate{cert},
+	return &TLSClient{
+		client: http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs:      caCertPool,
+					Certificates: []tls.Certificate{cert},
+				},
 			},
 		},
 	}, nil
+}
+
+// SendRequest encapsulates the entire process of initializing the client
+// and sending a request, returning the byte body of the response.
+func (client *TLSClient) SendRequest(request *http.Request) ([]byte, error) {
+
+	var err error
+
+	r, err := client.client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	defer r.Body.Close()
+	responseBody, responseError := ioutil.ReadAll(r.Body)
+	if responseError != nil {
+		return nil, responseError
+	}
+
+	return responseBody, nil
 }

@@ -68,21 +68,24 @@ func main() {
 			KeyFile:    *startKeyFile,
 			CaCertFile: *startCaCertFile,
 		}
-		request, err = StartRequest(models.StartRequest{Command: *startExec}, *startHost)
+		request, err = StartRequest(models.StartRequest{Command: *startExec},
+			*startHost)
 	} else if stopCommand.Parsed() {
 		permission = Permission{
 			CertFile:   *stopCertFile,
 			KeyFile:    *stopKeyFile,
 			CaCertFile: *stopCaCertFile,
 		}
-		request, err = StopRequest(models.StopRequest{TaskID: *stopTaskID}, *stopHost)
+		request, err = StopRequest(models.StopRequest{TaskID: *stopTaskID},
+			*stopHost)
 	} else if statusCommand.Parsed() {
 		permission = Permission{
 			CertFile:   *statusCertFile,
 			KeyFile:    *statusKeyFile,
 			CaCertFile: *statusCaCertFile,
 		}
-		request, err = StatusRequest(models.StatusRequest{TaskID: *statusTaskID}, *statusHost)
+		request, err = StatusRequest(models.StatusRequest{TaskID: *statusTaskID},
+			*statusHost)
 	} else {
 		fmt.Println("error parsing arguments")
 		os.Exit(1)
@@ -93,11 +96,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	responseBody, err := SendRequest(permission, request)
+	client, err := newTLSClient(permission)
+	if err != nil {
+		fmt.Printf("error initializing client: [%s]\n", err.Error())
+		os.Exit(1)
+	}
+
+	responseBody, err := client.SendRequest(request)
 	if err != nil {
 		fmt.Printf("error sending request: [%s]\n", err.Error())
 		os.Exit(1)
 	}
 
-	fmt.Printf("%s", *responseBody)
+	fmt.Printf("%s", responseBody)
 }

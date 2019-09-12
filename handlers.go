@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/GeorgeLuo/grpc/models"
@@ -38,7 +39,11 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ProcessStatusResponse)
+	err = json.NewEncoder(w).Encode(ProcessStatusResponse)
+	if err != nil {
+		log.Printf("StatusHandler failed to encode with: [%s]", err.Error())
+		return
+	}
 }
 
 // StopHandler handles the logic of a call to /stop to stop a process.
@@ -77,7 +82,11 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(StopResponse)
+	err = json.NewEncoder(w).Encode(StopResponse)
+	if err != nil {
+		log.Printf("StopHandler failed to encode with: [%s]", err.Error())
+		return
+	}
 }
 
 // StartHandler handles the logic of a call to /start to start a process.
@@ -113,7 +122,11 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(RunCommandResponse)
+	err = json.NewEncoder(w).Encode(RunCommandResponse)
+	if err != nil {
+		log.Printf("StartHandler failed to encode with: [%s]", err.Error())
+		return
+	}
 }
 
 // helper function to return error response
@@ -121,5 +134,9 @@ func replyWithError(writer http.ResponseWriter,
 	statusCode int, error models.ErrorMessage) {
 	writer.WriteHeader(statusCode)
 	writer.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(writer).Encode(error)
+	err := json.NewEncoder(writer).Encode(error)
+	if err != nil {
+		log.Printf("replyWithError failed to encode with: [%s]", err.Error())
+		return
+	}
 }
