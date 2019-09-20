@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/GeorgeLuo/grpc/models"
@@ -55,12 +54,12 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Printf("error parsing request: [%s]\n", err.Error())
+		fmt.Printf("error parsing request:\n %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	var request *http.Request
 	var permission Permission
+	var renderable models.Renderable
 
 	if startCommand.Parsed() {
 		permission = Permission{
@@ -68,45 +67,52 @@ func main() {
 			KeyFile:    *startKeyFile,
 			CaCertFile: *startCaCertFile,
 		}
-		request, err = StartRequest(models.StartRequest{Command: *startExec},
-			*startHost)
+
+		startResponse, err := Start(models.StartRequest{Command: *startExec},
+			*startHost, permission)
+
+		if err != nil {
+			fmt.Printf("error sending start:\n %s\n", err.Error())
+		}
+
+		renderable = startResponse
+
 	} else if stopCommand.Parsed() {
 		permission = Permission{
 			CertFile:   *stopCertFile,
 			KeyFile:    *stopKeyFile,
 			CaCertFile: *stopCaCertFile,
 		}
-		request, err = StopRequest(models.StopRequest{TaskID: *stopTaskID},
-			*stopHost)
+
+		stopResponse, err := Stop(models.StopRequest{TaskID: *stopTaskID},
+			*stopHost, permission)
+
+		if err != nil {
+			fmt.Printf("error sending stop:\n %s\n", err.Error())
+		}
+
+		renderable = stopResponse
+
 	} else if statusCommand.Parsed() {
 		permission = Permission{
 			CertFile:   *statusCertFile,
 			KeyFile:    *statusKeyFile,
 			CaCertFile: *statusCaCertFile,
 		}
-		request, err = StatusRequest(models.StatusRequest{TaskID: *statusTaskID},
-			*statusHost)
+
+		statusResponse, err := Status(models.StatusRequest{TaskID: *statusTaskID},
+			*statusHost, permission)
+		if err != nil {
+			fmt.Printf("error getting status:\n %s\n", err.Error())
+			os.Exit(1)
+		}
+
+		renderable = statusResponse
+
 	} else {
 		fmt.Println("error parsing arguments")
 		os.Exit(1)
 	}
 
-	if err != nil {
-		fmt.Printf("error forming request: [%s]\n", err.Error())
-		os.Exit(1)
-	}
-
-	client, err := newTLSClient(permission)
-	if err != nil {
-		fmt.Printf("error initializing client: [%s]\n", err.Error())
-		os.Exit(1)
-	}
-
-	responseBody, err := client.SendRequest(request)
-	if err != nil {
-		fmt.Printf("error sending request: [%s]\n", err.Error())
-		os.Exit(1)
-	}
-
-	fmt.Printf("%s", responseBody)
+	Render(renderable, os.Stdout)
 }

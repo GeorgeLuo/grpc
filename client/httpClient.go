@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -35,13 +36,13 @@ func newTLSClient(permission Permission) (*TLSClient, error) {
 
 	cert, err := tls.LoadX509KeyPair(permission.CertFile, permission.KeyFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error loading key/cert:\n %s", err.Error())
 	}
 
 	// TODO add command line arg for cacert
 	caCert, err := ioutil.ReadFile(permission.GetCaCert())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading cacert:\n %s", err.Error())
 	}
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
@@ -58,22 +59,26 @@ func newTLSClient(permission Permission) (*TLSClient, error) {
 	}, nil
 }
 
-// SendRequest encapsulates the entire process of initializing the client
-// and sending a request, returning the byte body of the response.
-func (client *TLSClient) SendRequest(request *http.Request) ([]byte, error) {
+// SendRequest encapsulates the entire process of initializing the client and
+// sending a request, returning the byte body of the response and status code
+func (client *TLSClient) SendRequest(request *http.Request) ([]byte,
+	int, error) {
 
 	var err error
 
 	r, err := client.client.Do(request)
 	if err != nil {
-		return nil, err
+		return nil, -1,
+			fmt.Errorf("client error sending request:\n %s", err.Error())
 	}
 
 	defer r.Body.Close()
+
 	responseBody, responseError := ioutil.ReadAll(r.Body)
 	if responseError != nil {
-		return nil, responseError
+		return nil, -1, fmt.Errorf("error reading response body:\n %s",
+			responseError.Error())
 	}
 
-	return responseBody, nil
+	return responseBody, r.StatusCode, nil
 }
