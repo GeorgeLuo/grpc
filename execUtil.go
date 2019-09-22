@@ -55,7 +55,7 @@ func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 		*statusResponse.ExitCode = command.GetExitCode()
 	}
 
-	statusResponse.Output = command.StdoutBuff.Lines()
+	statusResponse.Output = command.StdoutBuff.GetOutput()
 
 	return &statusResponse, nil
 }
@@ -87,7 +87,13 @@ func RunCommand(command string) (*models.StartResponse, error) {
 	taskID := hostname + "-" + strconv.Itoa(pgid) // TODO handle if Process or Pid nil
 	startResponse.TaskID = taskID
 
-	taskIDCommandMap.Put(taskID, NewCommandWrapper(cmd, outBuf))
+	cmdW, err := NewCommandWrapper(cmd, outBuf)
+
+	if err != nil {
+		return nil, err
+	}
+
+	taskIDCommandMap.Put(taskID, cmdW)
 
 	go func() {
 		// TODO add append error to CommandWrapper, impl accessors and setters

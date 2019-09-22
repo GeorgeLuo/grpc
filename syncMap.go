@@ -7,7 +7,7 @@ import (
 )
 
 // SyncMap is a map of taskID to previous processes. The abstraction is defined
-// to protect enforce thread-safety of read and write to CommandWrapper objects.
+// to enforce thread-safety of read and write to CommandWrapper objects.
 type SyncMap struct {
 	cmdMap map[string]*CommandWrapper
 	mutex  *sync.Mutex
@@ -44,11 +44,14 @@ type CommandWrapper struct {
 	StdoutBuff *Output
 	execError  string
 	exitCode   int
+	AggOut     []byte
 	mutex      *sync.Mutex
 }
 
 // NewCommandWrapper is used to return a default CommandWrapper object.
-func NewCommandWrapper(cmd *exec.Cmd, outBuff *Output) *CommandWrapper {
+func NewCommandWrapper(cmd *exec.Cmd,
+	outBuff *Output) (*CommandWrapper, error) {
+
 	return &CommandWrapper{
 		Command:    cmd,
 		StartTime:  time.Now(),
@@ -56,7 +59,7 @@ func NewCommandWrapper(cmd *exec.Cmd, outBuff *Output) *CommandWrapper {
 		StdoutBuff: outBuff,
 		exitCode:   cmd.ProcessState.ExitCode(),
 		mutex:      &sync.Mutex{},
-	}
+	}, nil
 }
 
 // SetEndTime sets the time when the process has finished execution.
@@ -94,7 +97,7 @@ func (cw *CommandWrapper) GetExecError() string {
 	return cw.execError
 }
 
-// SetExecError appends an error attributed to the CommandWrapper lifecycle.
+// SetExecError sets an error attributed to the CommandWrapper lifecycle.
 func (cw *CommandWrapper) SetExecError(error string) {
 	cw.mutex.Lock()
 	defer cw.mutex.Unlock()
