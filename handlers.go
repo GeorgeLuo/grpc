@@ -27,12 +27,24 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	taskID := statusRequest.TaskID
+	alias := statusRequest.Alias
 
-	ProcessStatusResponse, err := GetProcessStatus(taskID)
+	if taskID == "" && alias == "" {
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: "no task_id or alias provided"})
+		return
+	}
+
+	var ProcessStatusResponse *models.StatusResponse
+	if taskID != "" {
+		ProcessStatusResponse, err = GetProcessStatus(taskID)
+	} else {
+		ProcessStatusResponse, err = GetProcessStatusByAlias(statusRequest.Alias)
+	}
 
 	if err != nil {
 		replyWithError(w, http.StatusBadRequest,
-			models.ErrorMessage{TaskID: &taskID, Error: err.Error()})
+			models.ErrorMessage{Error: err.Error()})
 		return
 	}
 
@@ -63,7 +75,6 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	taskID := stopRequest.TaskID
-
 	if taskID == "" {
 		replyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: "no task_id provided"})
@@ -112,7 +123,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RunCommandResponse, err := RunCommand(command)
+	RunCommandResponse, err := RunCommand(command, startRequest.Alias)
 
 	if err != nil {
 		// TODO handle different error cases, namely separate invalid task_id

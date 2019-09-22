@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -19,6 +20,7 @@ import (
 
 var taskIDCommandMap SyncMap
 var hostname string
+var aliasMap AliasMap
 
 func init() {
 	var err error
@@ -28,6 +30,16 @@ func init() {
 	}
 
 	taskIDCommandMap = NewMap()
+	aliasMap = NewAliasMap()
+}
+
+// GetProcessStatusByAlias function to get command from alias mapping
+func GetProcessStatusByAlias(alias string) (*models.StatusResponse, error) {
+	if taskID, ok := aliasMap.Get(alias); ok {
+		return GetProcessStatus(taskID[0])
+	}
+
+	return nil, errors.New("alias not mapped")
 }
 
 // GetProcessStatus retrieves the status of the process specified with taskID.
@@ -61,7 +73,7 @@ func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 }
 
 // RunCommand starts a process from command argument.
-func RunCommand(command string) (*models.StartResponse, error) {
+func RunCommand(command string, alias string) (*models.StartResponse, error) {
 
 	var startResponse models.StartResponse
 	splitCommand := strings.Split(command, " ")
@@ -87,7 +99,16 @@ func RunCommand(command string) (*models.StartResponse, error) {
 	taskID := hostname + "-" + strconv.Itoa(pgid) // TODO handle if Process or Pid nil
 	startResponse.TaskID = taskID
 
+	// TODO: perhaps handle duplicate taskID with error from Put
 	taskIDCommandMap.Put(taskID, NewCommandWrapper(cmd, outBuf))
+
+	if alias != "" {
+		err = aliasMap.Put(alias, taskID)
+		if err != nil {
+			return nil, fmt.Errorf("no process started, alias map err: %s",
+				err.Error())
+		}
+	}
 
 	go func() {
 		// TODO add append error to CommandWrapper, impl accessors and setters

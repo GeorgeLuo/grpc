@@ -47,6 +47,7 @@ func (r *StatusResponse) Rows() [][]string {
 // StartResponse structure to capture return for /start call.
 type StartResponse struct {
 	TaskID string `json:"task_id,omitempty"`
+	Alias  string `json:"alias,omitempty"`
 }
 
 // Headers returns the headers to display start response data.
@@ -85,17 +86,19 @@ type ErrorMessage struct {
 	Error  string  `json:"error,omitempty"`
 }
 
-// StartRequest structure encapsulates body fields for start enpoint.
+// StartRequest structure encapsulates body fields for start endpoint.
 type StartRequest struct {
 	Command string `json:"command,omitempty"`
+	Alias   string `json:"alias,omitempty"`
 }
 
-// StopRequest structure encapsulates body fields for stop enpoint.
+// StopRequest structure encapsulates body fields for stop endpoint.
 type StopRequest struct {
 	TaskID string `json:"task_id,omitempty"`
 }
 
-// StatusRequest structure encapsulates body fields for status enpoint.
+// StatusRequest structure encapsulates body fields for status endpoint.
 type StatusRequest struct {
 	TaskID string `json:"task_id,omitempty"`
+	Alias  string `json:"alias,omitempty"`
 }

@@ -52,3 +52,19 @@ test a message to get status by task_id
 ```
 curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https://localhost:8443/status   -H 'Content-Type: application/json'   -d '{"task_id":"987f769fca40-3635"}'
 ```
+
+
+## Aliased Requests
+
+An alias can be provided to be used instead of a task id for record. Pass an alias to start as a field of the body.
+
+```
+curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem  https://localhost:8443/start   -H 'Content-Type: application/json'   -d '{"command":"./test_process.sh", "alias":"test"}'
+```
+
+Retrieve the status using the same aliases
+```
+curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https://localhost:8443/status   -H 'Content-Type: application/json'   -d '{"alias":"test"}'
+```
+
+Note in the case a task id AND an alias is provided (to status or stop endpoint), the alias will take priority in evaluation. If the alias is not mapped, the task id will NOT resolve. This is due to future consideration where alias will encapsulate multiple processes and will provide the more complex output.

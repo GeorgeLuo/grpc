@@ -54,7 +54,7 @@ func TestStartProcessBasic(t *testing.T) {
 	APIRouter := newAPIRouter()
 
 	var startResponse models.StartResponse
-	status := startProcess(t, command, &startResponse, APIRouter)
+	status := startProcess(t, command, "", &startResponse, APIRouter)
 
 	if status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -64,7 +64,8 @@ func TestStartProcessBasic(t *testing.T) {
 	time.Sleep(1 * time.Second) // now check status
 
 	var statusResponse models.StatusResponse
-	status = processStatus(t, startResponse.TaskID, &statusResponse, APIRouter)
+	status = processStatusByTaskID(t,
+		startResponse.TaskID, &statusResponse, APIRouter)
 
 	if status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -92,7 +93,7 @@ func TestStopProcessBasic(t *testing.T) {
 	APIRouter := newAPIRouter()
 
 	var startResponse models.StartResponse
-	status := startProcess(t, command, &startResponse, APIRouter)
+	status := startProcess(t, command, "", &startResponse, APIRouter)
 
 	if status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -115,12 +116,54 @@ func TestStopProcessBasic(t *testing.T) {
 	}
 }
 
+// TestAliasedStartProcessBasic validates start command with aliased task id.
+func TestAliasedStartProcessBasic(t *testing.T) {
+
+	command := "echo 12345"
+	testAlias := "echo-1"
+	APIRouter := newAPIRouter()
+
+	var startResponse models.StartResponse
+	status := startProcess(t, command, testAlias, &startResponse, APIRouter)
+
+	if status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	time.Sleep(1 * time.Second) // now check status
+
+	var statusResponse models.StatusResponse
+	status = processStatusByAlias(t,
+		testAlias, &statusResponse, APIRouter)
+
+	if status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	expectedStatusOutput := []string{"12345"}
+
+	if !reflect.DeepEqual(statusResponse.Output, expectedStatusOutput) {
+		t.Errorf("command output returned unexpected value: got %v want %v",
+			statusResponse.Output, expectedStatusOutput)
+	}
+
+	if *statusResponse.ExitCode != 0 {
+		t.Errorf("command exit code returned unexpected value: got %d want %d",
+			statusResponse.ExitCode, 0)
+	}
+}
+
 // Helper method to send start command.
-func startProcess(t *testing.T, command string,
+func startProcess(t *testing.T, command string, alias string,
 	startResponse *models.StartResponse, r *mux.Router) int {
 
 	body := new(bytes.Buffer)
-	json.NewEncoder(body).Encode(models.StartRequest{Command: command})
+	json.NewEncoder(body).Encode(models.StartRequest{
+		Command: command,
+		Alias:   alias,
+	})
 
 	startRequest, err := http.NewRequest("POST", "/start", body)
 
@@ -163,12 +206,25 @@ func stopProcess(t *testing.T, taskID string,
 	return rr.Code
 }
 
-// Helper method to send stop request.
-func processStatus(t *testing.T, taskID string,
+// Helper method to process status request by alias.
+func processStatusByAlias(t *testing.T, alias string,
+	statusResponse *models.StatusResponse, r *mux.Router) int {
+	return processStatus(t, models.StatusRequest{Alias: alias}, statusResponse, r)
+}
+
+// Helper method to process status request by task id.
+func processStatusByTaskID(t *testing.T, taskID string,
+	statusResponse *models.StatusResponse, r *mux.Router) int {
+	return processStatus(t,
+		models.StatusRequest{TaskID: taskID}, statusResponse, r)
+}
+
+// Helper method to process status request.
+func processStatus(t *testing.T, sr models.StatusRequest,
 	statusResponse *models.StatusResponse, r *mux.Router) int {
 
 	body := new(bytes.Buffer)
-	json.NewEncoder(body).Encode(models.StatusRequest{TaskID: taskID})
+	json.NewEncoder(body).Encode(sr)
 
 	statusRequest, err := http.NewRequest("POST", "/status", body)
 

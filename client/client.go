@@ -105,6 +105,7 @@ func main() {
 
 		batchStatusResponses := NewBatchStatusRenderable()
 
+		// TODO: return error on task_id not provided
 		for _, statusTaskID := range batchTaskID {
 
 			statusResponse, err := Status(models.StatusRequest{TaskID: statusTaskID},
