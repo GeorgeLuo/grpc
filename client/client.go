@@ -12,27 +12,6 @@ import (
 // TODO persistent connection
 // TODO: add client test code for setting up tls
 
-type arrayFlags []string
-
-func (flags *arrayFlags) String() string {
-	var sb strings.Builder
-	first := true
-	for _, flag := range *flags {
-		if !first {
-			sb.WriteString(", ")
-		}
-		sb.WriteString(flag)
-		first = false
-	}
-
-	return sb.String()
-}
-
-func (flags *arrayFlags) Set(value string) error {
-	*flags = append(*flags, value)
-	return nil
-}
-
 func main() {
 
 	if len(os.Args) < 2 {
@@ -147,4 +126,26 @@ func main() {
 	}
 
 	Render(renderable, os.Stdout)
+}
+
+// arrayFlags is used to manage batch requests to status using multiple task_ids
+type arrayFlags []string
+
+func (flags *arrayFlags) String() string {
+	var sb strings.Builder
+	first := true
+	for _, flag := range *flags {
+		if !first {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(flag)
+		first = false
+	}
+
+	return sb.String()
+}
+
+func (flags *arrayFlags) Set(value string) error {
+	*flags = append(*flags, value)
+	return nil
 }

@@ -34,6 +34,8 @@ to get status
 go run client/* status -cert cert.pem -key key.pem -task_id "987f769fca40-3635" -host localhost
 ```
 
+The status subcommand also supports multiple task_ids in param. This is done by providing more than one task_id parameter.
+
 ### Use grpc with curl
 
 Following the above instructions to generate a key and cert with a self-signed cert
@@ -46,7 +48,7 @@ test a message to stop a process using POST
 ```
 curl   -X POST  --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem  https://localhost:8443/stop   -H 'Content-Type: application/json'   -d '{"task_id":"987f769fca40-3635"}'
 ```
-test a message retrieving GET
+test a message to get status by task_id
 ```
 curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https://localhost:8443/status   -H 'Content-Type: application/json'   -d '{"task_id":"987f769fca40-3635"}'
 ```

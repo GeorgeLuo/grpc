@@ -7,8 +7,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-// TODO: handle batch requests
-
 // Render writes to out stream a table with contents of a renderable object.
 func Render(renderable models.Renderable, out io.Writer) {
 
@@ -22,5 +20,4 @@ func Render(renderable models.Renderable, out io.Writer) {
 	t.AppendBulk(renderable.Rows())
 
 	t.Render()
-
 }
