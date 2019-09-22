@@ -26,6 +26,7 @@ func main() {
 	startHost := startCommand.String("host", "localhost", "endpoint of request")
 	startExec := startCommand.String("command", "", "command to exec")
 	startAlias := startCommand.String("alias", "", "alias for task id")
+	startFormatted := startCommand.Bool("t", false, "generate output as table")
 
 	stopCommand := flag.NewFlagSet("stop", flag.ExitOnError)
 	stopCertFile := stopCommand.String("cert", "cert.pem", "path to cert file")
@@ -33,6 +34,7 @@ func main() {
 	stopKeyFile := stopCommand.String("key", "key.pem", "path to key file")
 	stopHost := stopCommand.String("host", "localhost", "endpoint of request")
 	stopTaskID := stopCommand.String("task_id", "", "task_id of process")
+	stopFormatted := stopCommand.Bool("t", false, "generate output as table")
 
 	var batchTaskID arrayFlags
 
@@ -42,6 +44,7 @@ func main() {
 	statusKeyFile := statusCommand.String("key", "key.pem", "path to key file")
 	statusHost := statusCommand.String("host", "localhost", "endpoint of request")
 	statusAlias := statusCommand.String("alias", "", "alias for task id")
+	statusFormatted := statusCommand.Bool("t", false, "generate output as table")
 
 	statusCommand.Var(&batchTaskID, "task_id", "task_id of process")
 
@@ -66,6 +69,7 @@ func main() {
 
 	var permission Permission
 	var renderable []Renderable
+	var tabled bool
 
 	if startCommand.Parsed() {
 		permission = Permission{
@@ -85,6 +89,7 @@ func main() {
 		}
 
 		renderable = append(renderable, NewRenderableStartResponse(startResponse))
+		tabled = *startFormatted
 
 	} else if stopCommand.Parsed() {
 		permission = Permission{
@@ -102,6 +107,7 @@ func main() {
 		}
 
 		renderable = append(renderable, NewRenderableStopResponse(stopResponse))
+		tabled = *stopFormatted
 
 	} else if statusCommand.Parsed() {
 
@@ -109,6 +115,11 @@ func main() {
 			CertFile:   *statusCertFile,
 			KeyFile:    *statusKeyFile,
 			CaCertFile: *statusCaCertFile,
+		}
+
+		if *statusAlias != "" && len(batchTaskID) > 0 {
+			fmt.Println("error: provide either alias or task_id, not both")
+			os.Exit(1)
 		}
 
 		// TODO: refactor this from main()
@@ -149,14 +160,17 @@ func main() {
 			}
 		}
 
-		renderable = append(renderable, b)
+		if b.Size() > 0 {
+			renderable = append(renderable, b)
+		}
+		tabled = *statusFormatted
 
 	} else {
 		fmt.Println("error parsing arguments")
 		os.Exit(1)
 	}
 
-	Render(os.Stdout, renderable)
+	Render(os.Stdout, renderable, tabled)
 }
 
 // arrayFlags is used to manage batch requests to status using multiple task_ids

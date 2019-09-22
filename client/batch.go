@@ -1,5 +1,9 @@
 package main
 
+import (
+	"strings"
+)
+
 // BatchRenderable is a renderable for multiple status requests.
 type BatchRenderable struct {
 	Renderables []Renderable
@@ -14,6 +18,26 @@ func NewBatchRenderable(t string) *BatchRenderable {
 		Renderables: []Renderable{},
 		title:       t,
 	}
+}
+
+// Raw returns the raw json of a start response.
+func (b *BatchRenderable) Raw() string {
+
+	var sb strings.Builder
+
+	for i, renderable := range b.Renderables {
+		sb.WriteString(renderable.Raw())
+		if i != len(b.Renderables) {
+			sb.WriteString("\n")
+		}
+	}
+
+	return sb.String()
+}
+
+// Size returns number of items in batch
+func (b *BatchRenderable) Size() int {
+	return len(b.Renderables)
 }
 
 // Headers returns the headers of the renderable.

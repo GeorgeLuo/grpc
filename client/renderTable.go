@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 	"strconv"
 
@@ -9,7 +11,17 @@ import (
 )
 
 // Render writes to out stream a table with contents of a renderable object.
-func Render(out io.Writer, renderables []Renderable) {
+func Render(out io.Writer, renderables []Renderable, tabled bool) {
+
+	if !tabled {
+		for i, renderable := range renderables {
+			out.Write([]byte(renderable.Raw()))
+			if i != len(renderables) {
+				out.Write([]byte("\n"))
+			}
+		}
+		return
+	}
 
 	for _, renderable := range renderables {
 		t := tablewriter.NewWriter(out)
@@ -33,6 +45,7 @@ type Renderable interface {
 	Title() string
 	Headers() []string
 	Rows() [][]string
+	Raw() string
 }
 
 // RenderableStatusResponse a renderable wrapper for models.StatusResponse
@@ -49,6 +62,16 @@ func NewRenderableStatusResponse(r *models.StatusResponse) *RenderableStatusResp
 	}
 }
 
+// Raw returns the raw json of a status response.
+func (r *RenderableStatusResponse) Raw() string {
+	s, err := json.Marshal(r.statusResponse)
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	return string(s)
+}
+
 // Title returns the title of the renderable table.
 func (r *RenderableStatusResponse) Title() string {
 	return r.title
@@ -62,10 +85,25 @@ func (r *RenderableStatusResponse) Headers() []string {
 
 // Rows produces a row of data for the data returned by status response.
 func (r *RenderableStatusResponse) Rows() [][]string {
+	var endTime string
+	if r.statusResponse.EndTime == nil {
+		endTime = ""
+	} else {
+		endTime = r.statusResponse.EndTime.String()
+	}
+
+	var exitCode string
+	if r.statusResponse.ExitCode == nil {
+		exitCode = ""
+	} else {
+		exitCode = strconv.Itoa(*r.statusResponse.ExitCode)
+	}
+
 	return [][]string{
-		{r.statusResponse.TaskID, r.statusResponse.StartTime.String(),
-			r.statusResponse.EndTime.String(),
-			strconv.Itoa(*r.statusResponse.ExitCode), r.statusResponse.ExecError},
+		{r.statusResponse.TaskID,
+			r.statusResponse.StartTime.String(),
+			endTime, exitCode,
+			r.statusResponse.ExecError},
 	}
 }
 
@@ -81,6 +119,15 @@ func NewRenderableStartResponse(r *models.StartResponse) *RenderableStartRespons
 	return &RenderableStartResponse{
 		startResponse: r,
 	}
+}
+
+// Raw returns the raw json of a start response.
+func (r *RenderableStartResponse) Raw() string {
+	s, err := json.Marshal(r.startResponse)
+	if err != nil {
+		return ""
+	}
+	return string(s)
 }
 
 // Headers returns the headers to display start response data.
@@ -112,6 +159,15 @@ func NewRenderableStopResponse(r *models.StopResponse) *RenderableStopResponse {
 	return &RenderableStopResponse{
 		stopResponse: r,
 	}
+}
+
+// Raw returns the raw json of a stop response.
+func (r *RenderableStopResponse) Raw() string {
+	s, err := json.Marshal(r.stopResponse)
+	if err != nil {
+		return ""
+	}
+	return string(s)
 }
 
 // Headers returns the headers to populate a table of stop response fields.
