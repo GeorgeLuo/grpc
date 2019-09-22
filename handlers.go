@@ -18,16 +18,15 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: make use of request struct from models.go
-	bodyMap := make(map[string]string)
-	err = json.Unmarshal(body, &bodyMap)
+	var statusRequest models.StatusRequest
+	err = json.Unmarshal(body, &statusRequest)
 	if err != nil {
 		replyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
 
-	taskID := bodyMap["task_id"]
+	taskID := statusRequest.TaskID
 
 	ProcessStatusResponse, err := GetProcessStatus(taskID)
 
@@ -55,16 +54,15 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: make use of request struct from models.go
-	bodyMap := make(map[string]string)
-	err = json.Unmarshal(body, &bodyMap)
+	var stopRequest models.StopRequest
+	err = json.Unmarshal(body, &stopRequest)
 	if err != nil {
 		replyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
 
-	taskID := bodyMap["task_id"]
+	taskID := stopRequest.TaskID
 
 	if taskID == "" {
 		replyWithError(w, http.StatusBadRequest,
@@ -93,17 +91,21 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 func StartHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
-
-	// TODO: make use of request struct from models.go
-	bodyMap := make(map[string]string)
-	err = json.Unmarshal(body, &bodyMap)
 	if err != nil {
 		replyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
 
-	command := bodyMap["command"]
+	var startRequest models.StartRequest
+	err = json.Unmarshal(body, &startRequest)
+	if err != nil {
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: err.Error()})
+		return
+	}
+
+	command := startRequest.Command
 	if command == "" {
 		replyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: "no command provided"})
