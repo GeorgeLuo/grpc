@@ -76,6 +76,7 @@ func main() {
 
 		if err != nil {
 			fmt.Printf("error sending start:\n %s\n", err.Error())
+			os.Exit(1)
 		}
 
 		renderable = startResponse
@@ -92,6 +93,7 @@ func main() {
 
 		if err != nil {
 			fmt.Printf("error sending stop:\n %s\n", err.Error())
+			os.Exit(1)
 		}
 
 		renderable = stopResponse
