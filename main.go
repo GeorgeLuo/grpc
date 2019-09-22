@@ -10,6 +10,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// TODO: add a handler to eventstream output of process
+
 func main() {
 	log.Println("setting up handlers ...")
 	router := mux.NewRouter()

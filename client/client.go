@@ -4,12 +4,34 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/GeorgeLuo/grpc/models"
 )
 
 // TODO persistent connection
 // TODO: add client test code for setting up tls
+
+type arrayFlags []string
+
+func (flags *arrayFlags) String() string {
+	var sb strings.Builder
+	first := true
+	for _, flag := range *flags {
+		if !first {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(flag)
+		first = false
+	}
+
+	return sb.String()
+}
+
+func (flags *arrayFlags) Set(value string) error {
+	*flags = append(*flags, value)
+	return nil
+}
 
 func main() {
 
@@ -32,12 +54,14 @@ func main() {
 	stopHost := stopCommand.String("host", "localhost", "endpoint of request")
 	stopTaskID := stopCommand.String("task_id", "", "task_id of process")
 
+	var batchTaskID arrayFlags
+
 	statusCommand := flag.NewFlagSet("status", flag.ExitOnError)
 	statusCertFile := statusCommand.String("cert", "cert.pem", "path to cert file")
 	statusCaCertFile := statusCommand.String("cacert", "", "path to cacert file")
 	statusKeyFile := statusCommand.String("key", "key.pem", "path to key file")
 	statusHost := statusCommand.String("host", "localhost", "endpoint of request")
-	statusTaskID := statusCommand.String("task_id", "", "task_id of process")
+	statusCommand.Var(&batchTaskID, "task_id", "task_id of process")
 
 	var err error
 
@@ -100,14 +124,22 @@ func main() {
 			CaCertFile: *statusCaCertFile,
 		}
 
-		statusResponse, err := Status(models.StatusRequest{TaskID: *statusTaskID},
-			*statusHost, permission)
-		if err != nil {
-			fmt.Printf("error getting status:\n %s\n", err.Error())
-			os.Exit(1)
+		batchStatusResponses := NewBatchStatusRenderable()
+
+		for _, statusTaskID := range batchTaskID {
+
+			statusResponse, err := Status(models.StatusRequest{TaskID: statusTaskID},
+				*statusHost, permission)
+
+			if err != nil {
+				fmt.Printf("error getting status for task %s:\n %s\n",
+					statusTaskID, err.Error())
+			} else {
+				batchStatusResponses.AddResponse(*statusResponse)
+			}
 		}
 
-		renderable = statusResponse
+		renderable = batchStatusResponses
 
 	} else {
 		fmt.Println("error parsing arguments")

@@ -15,9 +15,12 @@ func Render(renderable models.Renderable, out io.Writer) {
 	t := tablewriter.NewWriter(out)
 	t.SetHeader(renderable.Headers())
 
-	for _, row := range renderable.Rows() {
-		t.Append(row)
-	}
+	// format table
+	t.SetRowLine(true)
+	t.SetRowSeparator("-")
+
+	t.AppendBulk(renderable.Rows())
+
 	t.Render()
 
 }
