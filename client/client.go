@@ -116,7 +116,7 @@ func main() {
 		// only evaluate alias if alias is present. TODO: The renderable being added
 		// will eventually contain multiple processes. The Status method will return
 		// a slice of renderable responses.
-		if statusAlias != nil {
+		if *statusAlias != "" {
 			b := NewBatchRenderable(*statusAlias)
 
 			statusResponse, err := Status(models.StatusRequest{
