@@ -87,13 +87,7 @@ func RunCommand(command string) (*models.StartResponse, error) {
 	taskID := hostname + "-" + strconv.Itoa(pgid) // TODO handle if Process or Pid nil
 	startResponse.TaskID = taskID
 
-	cmdW, err := NewCommandWrapper(cmd, outBuf)
-
-	if err != nil {
-		return nil, err
-	}
-
-	taskIDCommandMap.Put(taskID, cmdW)
+	taskIDCommandMap.Put(taskID, NewCommandWrapper(cmd, outBuf))
 
 	go func() {
 		// TODO add append error to CommandWrapper, impl accessors and setters

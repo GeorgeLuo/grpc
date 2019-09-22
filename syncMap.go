@@ -44,14 +44,12 @@ type CommandWrapper struct {
 	StdoutBuff *Output
 	execError  string
 	exitCode   int
-	AggOut     []byte
 	mutex      *sync.Mutex
 }
 
 // NewCommandWrapper is used to return a default CommandWrapper object.
 func NewCommandWrapper(cmd *exec.Cmd,
-	outBuff *Output) (*CommandWrapper, error) {
-
+	outBuff *Output) *CommandWrapper {
 	return &CommandWrapper{
 		Command:    cmd,
 		StartTime:  time.Now(),
@@ -59,7 +57,7 @@ func NewCommandWrapper(cmd *exec.Cmd,
 		StdoutBuff: outBuff,
 		exitCode:   cmd.ProcessState.ExitCode(),
 		mutex:      &sync.Mutex{},
-	}, nil
+	}
 }
 
 // SetEndTime sets the time when the process has finished execution.
