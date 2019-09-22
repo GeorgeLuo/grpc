@@ -1,18 +1,12 @@
 package models
 
 import (
-	"strconv"
 	"time"
 )
 
 // TODO: handle batch request and responses
-
-// Renderable is an interface to support operation to display contents in a
-// tablewriter table.
-type Renderable interface {
-	Headers() []string
-	Rows() [][]string
-}
+// TODO: make renderable wrapper around the responses instead of making
+// responses renderables.
 
 // request and response structures
 
@@ -30,54 +24,16 @@ type StatusResponse struct {
 	ExecError string `json:"execError,omitempty"`
 }
 
-// Headers returns the headers to populate a table of status response fields.
-func (r *StatusResponse) Headers() []string {
-	return []string{"task_id", "start_time", "end_time",
-		"exit_code", "exec_error"}
-}
-
-// Rows produces a row of data for the data returned by status response.
-func (r *StatusResponse) Rows() [][]string {
-	return [][]string{
-		{r.TaskID, r.StartTime.String(), r.EndTime.String(),
-			strconv.Itoa(*r.ExitCode), r.ExecError},
-	}
-}
-
 // StartResponse structure to capture return for /start call.
 type StartResponse struct {
 	TaskID string `json:"task_id,omitempty"`
 	Alias  string `json:"alias,omitempty"`
 }
 
-// Headers returns the headers to display start response data.
-func (r *StartResponse) Headers() []string {
-	return []string{"task_id"}
-}
-
-// Rows produces a row of data for task_id.
-func (r *StartResponse) Rows() [][]string {
-	return [][]string{
-		{r.TaskID},
-	}
-}
-
 // StopResponse is a structure to capture return for /stop call.
 type StopResponse struct {
 	TaskID   string `json:"task_id"`
 	ExitCode *int   `json:"exit_code,omitempty"`
-}
-
-// Headers returns the headers to populate a table of stop response fields.
-func (r *StopResponse) Headers() []string {
-	return []string{"task_id", "exit_code"}
-}
-
-// Rows produces a row of data for the data returned by stop response.
-func (r *StopResponse) Rows() [][]string {
-	return [][]string{
-		{r.TaskID, strconv.Itoa(*r.ExitCode)},
-	}
 }
 
 // ErrorMessage is structure for error message.

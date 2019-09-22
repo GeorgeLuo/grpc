@@ -25,6 +25,7 @@ func main() {
 	startKeyFile := startCommand.String("key", "key.pem", "path to key file")
 	startHost := startCommand.String("host", "localhost", "endpoint of request")
 	startExec := startCommand.String("command", "", "command to exec")
+	startAlias := startCommand.String("alias", "", "alias for task id")
 
 	stopCommand := flag.NewFlagSet("stop", flag.ExitOnError)
 	stopCertFile := stopCommand.String("cert", "cert.pem", "path to cert file")
@@ -40,6 +41,8 @@ func main() {
 	statusCaCertFile := statusCommand.String("cacert", "", "path to cacert file")
 	statusKeyFile := statusCommand.String("key", "key.pem", "path to key file")
 	statusHost := statusCommand.String("host", "localhost", "endpoint of request")
+	statusAlias := statusCommand.String("alias", "", "alias for task id")
+
 	statusCommand.Var(&batchTaskID, "task_id", "task_id of process")
 
 	var err error
@@ -62,7 +65,7 @@ func main() {
 	}
 
 	var permission Permission
-	var renderable models.Renderable
+	var renderable []Renderable
 
 	if startCommand.Parsed() {
 		permission = Permission{
@@ -71,15 +74,17 @@ func main() {
 			CaCertFile: *startCaCertFile,
 		}
 
-		startResponse, err := Start(models.StartRequest{Command: *startExec},
-			*startHost, permission)
+		startResponse, err := Start(models.StartRequest{
+			Command: *startExec,
+			Alias:   *startAlias,
+		}, *startHost, permission)
 
 		if err != nil {
 			fmt.Printf("error sending start:\n %s\n", err.Error())
 			os.Exit(1)
 		}
 
-		renderable = startResponse
+		renderable = append(renderable, NewRenderableStartResponse(startResponse))
 
 	} else if stopCommand.Parsed() {
 		permission = Permission{
@@ -96,39 +101,62 @@ func main() {
 			os.Exit(1)
 		}
 
-		renderable = stopResponse
+		renderable = append(renderable, NewRenderableStopResponse(stopResponse))
 
 	} else if statusCommand.Parsed() {
+
 		permission = Permission{
 			CertFile:   *statusCertFile,
 			KeyFile:    *statusKeyFile,
 			CaCertFile: *statusCaCertFile,
 		}
 
-		batchStatusResponses := NewBatchStatusRenderable()
+		// TODO: refactor this from main()
+
+		// only evaluate alias if alias is present. TODO: The renderable being added
+		// will eventually contain multiple processes. The Status method will return
+		// a slice of renderable responses.
+		if statusAlias != nil {
+			b := NewBatchRenderable(*statusAlias)
+
+			statusResponse, err := Status(models.StatusRequest{
+				Alias: *statusAlias,
+			}, *statusHost, permission)
+
+			if err != nil {
+				fmt.Printf("error getting status for alias %s:\n %s\n",
+					*statusAlias, err.Error())
+			} else {
+				b.AddRow(NewRenderableStatusResponse(statusResponse))
+			}
+			renderable = append(renderable, b)
+		}
+
+		b := NewBatchRenderable("")
 
 		// TODO: return error on task_id not provided
 		for _, statusTaskID := range batchTaskID {
 
-			statusResponse, err := Status(models.StatusRequest{TaskID: statusTaskID},
-				*statusHost, permission)
+			statusResponse, err := Status(models.StatusRequest{
+				TaskID: statusTaskID,
+			}, *statusHost, permission)
 
 			if err != nil {
 				fmt.Printf("error getting status for task %s:\n %s\n",
 					statusTaskID, err.Error())
 			} else {
-				batchStatusResponses.AddResponse(*statusResponse)
+				b.AddRow(NewRenderableStatusResponse(statusResponse))
 			}
 		}
 
-		renderable = batchStatusResponses
+		renderable = append(renderable, b)
 
 	} else {
 		fmt.Println("error parsing arguments")
 		os.Exit(1)
 	}
 
-	Render(renderable, os.Stdout)
+	Render(os.Stdout, renderable)
 }
 
 // arrayFlags is used to manage batch requests to status using multiple task_ids

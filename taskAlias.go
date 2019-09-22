@@ -31,7 +31,7 @@ func (rwm *AliasMap) Put(alias string, taskIDs ...string) error {
 		return errors.New("illegal empty alias")
 	}
 	if taskID, ok := rwm.aliasMap[alias]; ok {
-		return fmt.Errorf("alias [%s] already mapped to taskId [%s]", alias, taskID)
+		return fmt.Errorf("alias [%s] already mapped to taskId %s", alias, taskID)
 	}
 	rwm.aliasMap[alias] = taskIDs
 	return nil

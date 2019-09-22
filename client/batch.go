@@ -1,42 +1,45 @@
 package main
 
-import (
-	"github.com/GeorgeLuo/grpc/models"
-)
-
-// BatchStatusRenderable is a renderable for multiple status requests.
-type BatchStatusRenderable struct {
-	StatusResponses []models.StatusResponse
-	rows            [][]string
-	header          []string
+// BatchRenderable is a renderable for multiple status requests.
+type BatchRenderable struct {
+	Renderables []Renderable
+	rows        [][]string
+	header      []string
+	title       string
 }
 
-// NewBatchStatusRenderable is used to return an empty SyncMap.
-func NewBatchStatusRenderable() *BatchStatusRenderable {
-	return &BatchStatusRenderable{
-		StatusResponses: []models.StatusResponse{},
+// NewBatchRenderable is used to return an empty renderable collection.
+func NewBatchRenderable(t string) *BatchRenderable {
+	return &BatchRenderable{
+		Renderables: []Renderable{},
+		title:       t,
 	}
 }
 
-// Headers returns the headers to populate a table of status responses.
-func (b *BatchStatusRenderable) Headers() []string {
-	if len(b.StatusResponses) > 0 {
-		return b.StatusResponses[0].Headers()
+// Headers returns the headers of the renderable.
+func (b *BatchRenderable) Headers() []string {
+	if len(b.Renderables) > 0 {
+		return b.Renderables[0].Headers()
 	}
 	return b.header
 }
 
-// Rows produces a row of data for the data returned by status responses.
-func (b *BatchStatusRenderable) Rows() [][]string {
+// Rows produces a row of data for the data returned by the batch.
+func (b *BatchRenderable) Rows() [][]string {
 
-	for _, statusResponse := range b.StatusResponses {
-		b.rows = append(b.rows, statusResponse.Rows()...)
+	for _, renderable := range b.Renderables {
+		b.rows = append(b.rows, renderable.Rows()...)
 	}
 
 	return b.rows
 }
 
-// AddResponse adds a status response object to the batch.
-func (b *BatchStatusRenderable) AddResponse(r models.StatusResponse) {
-	b.StatusResponses = append(b.StatusResponses, r)
+// Title is usually the alias, summary of the table contents.
+func (b *BatchRenderable) Title() string {
+	return b.title
+}
+
+// AddRow adds a renderable to the batch.
+func (b *BatchRenderable) AddRow(r Renderable) {
+	b.Renderables = append(b.Renderables, r)
 }
