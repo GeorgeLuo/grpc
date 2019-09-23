@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,8 +10,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// TODO: add a handler to eventstream output of process
+
 func main() {
-	fmt.Println("setting up handlers ...")
+	log.Println("setting up handlers ...")
 	router := mux.NewRouter()
 	router.HandleFunc("/status", StatusHandler).
 		Methods("POST")
@@ -31,9 +32,7 @@ func main() {
 
 	// Create the TLS Config with the CA pool and enable Client certificate validation
 	tlsConfig := &tls.Config{
-		ClientCAs: caCertPool,
-		// ClientAuth: tls.NoClientCert,
-		// InsecureSkipVerify: true,
+		ClientCAs:  caCertPool,
 		ClientAuth: tls.RequireAndVerifyClientCert,
 	}
 	tlsConfig.BuildNameToCertificate()
@@ -46,7 +45,5 @@ func main() {
 	}
 
 	// Listen to HTTPS connections with the server certificate and wait
-
 	log.Fatal(server.ListenAndServeTLS("cert.pem", "key.pem"))
-	// log.Fatal(server.ListenAndServe())
 }

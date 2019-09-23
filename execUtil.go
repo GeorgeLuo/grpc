@@ -30,11 +30,10 @@ func init() {
 	taskIDCommandMap = NewMap()
 }
 
-// GetProcessStatus is called to retrieve the details of a processes by task_id.
+// GetProcessStatus retrieves the status of the process specified with taskID.
 func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 
 	var statusResponse models.StatusResponse
-	statusResponse.TaskID = taskID
 
 	var command *CommandWrapper
 	var ok bool
@@ -49,16 +48,14 @@ func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 	statusResponse.StartTime = new(time.Time)
 	*statusResponse.StartTime = command.StartTime
 	statusResponse.ExecError = command.GetExecError()
-	statusResponse.Finished = new(bool)
 	if command.GetEndTime() != nil {
-		*statusResponse.Finished = true
 		statusResponse.EndTime = new(time.Time)
 		statusResponse.EndTime = command.GetEndTime()
 		statusResponse.ExitCode = new(int)
 		*statusResponse.ExitCode = command.GetExitCode()
 	}
 
-	statusResponse.Output = command.StdoutBuff.Lines()
+	statusResponse.Output = command.StdoutBuff.GetOutput()
 
 	return &statusResponse, nil
 }
@@ -110,7 +107,7 @@ func intPtr(value int) *int {
 	return &value
 }
 
-// StopProcess is called to end a previously started process.
+// StopProcess ends a previously started process.
 func StopProcess(taskID string) (*models.StopResponse, error) {
 
 	var stopResponse models.StopResponse

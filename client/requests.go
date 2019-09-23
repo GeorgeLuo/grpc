@@ -5,43 +5,47 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+
+	"github.com/GeorgeLuo/grpc/models"
 )
 
 // TODO consider refactor of these 3 methods. At the moment this makes sense,
 // but custom logic might be needed in the future.
 
-// StartRequest forms a request object for http to consume.
-func StartRequest(body interface{}, host string) (*http.Request, error) {
-	urlString := "https://" + host + ":8443/start"
-	byteBody, err := json.Marshal(body)
-	if err != nil {
-		return nil, errors.New("malformed body")
-	}
-	request, err := http.NewRequest("POST", urlString, bytes.NewBuffer(byteBody))
-	request.Header.Set("Content-Type", "application/json")
-	return request, err
+// StartRequest returns a request object to start a process from /start endpoint.
+func StartRequest(request models.StartRequest, host string) (*http.Request, error) {
+	return buildRequest(request, startURL(host))
 }
 
-// StopRequest forms a request object for http to consume.
-func StopRequest(body interface{}, host string) (*http.Request, error) {
-	urlString := "https://" + host + ":8443/stop"
-	byteBody, err := json.Marshal(body)
-	if err != nil {
-		return nil, errors.New("malformed body")
-	}
-	request, err := http.NewRequest("POST", urlString, bytes.NewBuffer(byteBody))
-	request.Header.Set("Content-Type", "application/json")
-	return request, err
+func startURL(host string) string {
+	return "https://" + host + ":8443/start"
 }
 
-// StatusRequest forms a request object for http to consume.
-func StatusRequest(body interface{}, host string) (*http.Request, error) {
-	urlString := "https://" + host + ":8443/status"
-	byteBody, err := json.Marshal(body)
+// StopRequest returns a request object to stop a process using /stop endpoint.
+func StopRequest(request models.StopRequest, host string) (*http.Request, error) {
+	return buildRequest(request, stopURL(host))
+}
+
+func stopURL(host string) string {
+	return "https://" + host + ":8443/stop"
+}
+
+// StatusRequest returns a request object to retrieve status of a process
+// using /status endpoint.
+func StatusRequest(request models.StatusRequest, host string) (*http.Request, error) {
+	return buildRequest(request, statusURL(host))
+}
+
+func statusURL(host string) string {
+	return "https://" + host + ":8443/status"
+}
+
+func buildRequest(request interface{}, urlString string) (*http.Request, error) {
+	byteBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, errors.New("malformed body")
 	}
-	request, err := http.NewRequest("POST", urlString, bytes.NewBuffer(byteBody))
-	request.Header.Set("Content-Type", "application/json")
-	return request, err
+	req, err := http.NewRequest("POST", urlString, bytes.NewReader(byteBody))
+	req.Header.Set("Content-Type", "application/json")
+	return req, err
 }

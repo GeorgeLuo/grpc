@@ -1,7 +1,7 @@
 # used to initialize volume mounted dev environment
 # run with
 #  'sudo docker build -t grpc --file Dockerfile.dev .'
-#  'sudo docker run --volume "$(pwd)":/go/src/github.com/GeorgeLuo/grpc --interactive --tty --publish 8443:8443 --net=host grpc'
+#  'sudo docker run --volume "$(pwd)":/go/src/github.com/GeorgeLuo/grpc --interactive --tty --publish 8443:8443 grpc'
 
 FROM golang
 
@@ -9,6 +9,7 @@ ADD . /go/src/github.com/GeorgeLuo/grpc
 
 # Install deps
 RUN go get github.com/gorilla/mux
+RUN go get github.com/olekukonko/tablewriter
 
 WORKDIR /go/src/github.com/GeorgeLuo/grpc
 

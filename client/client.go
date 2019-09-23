@@ -1,21 +1,16 @@
 package main
 
 import (
-	"crypto/tls"
-	"crypto/x509"
-	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
+	"strings"
 
 	"github.com/GeorgeLuo/grpc/models"
 )
 
 // TODO persistent connection
-
-var client *http.Client
+// TODO: add client test code for setting up tls
 
 func main() {
 
@@ -24,112 +19,133 @@ func main() {
 		os.Exit(1)
 	}
 
-	args := os.Args
-	var certFile string
-	var keyFile string
-	var host string
-	var endpoint string
+	startCommand := flag.NewFlagSet("start", flag.ExitOnError)
+	startCertFile := startCommand.String("cert", "cert.pem", "path to cert file")
+	startCaCertFile := startCommand.String("cacert", "", "path to cacert file")
+	startKeyFile := startCommand.String("key", "key.pem", "path to key file")
+	startHost := startCommand.String("host", "localhost", "endpoint of request")
+	startExec := startCommand.String("command", "", "command to exec")
 
-	body, err := ReadArgs(args, &endpoint, &certFile, &keyFile, &host)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
+	stopCommand := flag.NewFlagSet("stop", flag.ExitOnError)
+	stopCertFile := stopCommand.String("cert", "cert.pem", "path to cert file")
+	stopCaCertFile := stopCommand.String("cacert", "", "path to cacert file")
+	stopKeyFile := stopCommand.String("key", "key.pem", "path to key file")
+	stopHost := stopCommand.String("host", "localhost", "endpoint of request")
+	stopTaskID := stopCommand.String("task_id", "", "task_id of process")
 
-	var request *http.Request
+	var batchTaskID arrayFlags
 
-	switch endpoint {
+	statusCommand := flag.NewFlagSet("status", flag.ExitOnError)
+	statusCertFile := statusCommand.String("cert", "cert.pem", "path to cert file")
+	statusCaCertFile := statusCommand.String("cacert", "", "path to cacert file")
+	statusKeyFile := statusCommand.String("key", "key.pem", "path to key file")
+	statusHost := statusCommand.String("host", "localhost", "endpoint of request")
+	statusCommand.Var(&batchTaskID, "task_id", "task_id of process")
+
+	var err error
+
+	switch os.Args[1] {
 	case "start":
-		request, err = StartRequest(body, host)
+		err = startCommand.Parse(os.Args[2:])
 	case "stop":
-		request, err = StopRequest(body, host)
+		err = stopCommand.Parse(os.Args[2:])
 	case "status":
-		request, err = StatusRequest(body, host)
+		err = statusCommand.Parse(os.Args[2:])
 	default:
-		err = errors.New("invalid command")
+		fmt.Println("invalid command")
 		os.Exit(1)
 	}
 
-	client, err = newClient(certFile, keyFile, certFile)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("error parsing request:\n %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	r, err := client.Do(request)
-	if err != nil {
-		fmt.Println(err.Error())
+	var permission Permission
+	var renderable models.Renderable
+
+	if startCommand.Parsed() {
+		permission = Permission{
+			CertFile:   *startCertFile,
+			KeyFile:    *startKeyFile,
+			CaCertFile: *startCaCertFile,
+		}
+
+		startResponse, err := Start(models.StartRequest{Command: *startExec},
+			*startHost, permission)
+
+		if err != nil {
+			fmt.Printf("error sending start:\n %s\n", err.Error())
+		}
+
+		renderable = startResponse
+
+	} else if stopCommand.Parsed() {
+		permission = Permission{
+			CertFile:   *stopCertFile,
+			KeyFile:    *stopKeyFile,
+			CaCertFile: *stopCaCertFile,
+		}
+
+		stopResponse, err := Stop(models.StopRequest{TaskID: *stopTaskID},
+			*stopHost, permission)
+
+		if err != nil {
+			fmt.Printf("error sending stop:\n %s\n", err.Error())
+		}
+
+		renderable = stopResponse
+
+	} else if statusCommand.Parsed() {
+		permission = Permission{
+			CertFile:   *statusCertFile,
+			KeyFile:    *statusKeyFile,
+			CaCertFile: *statusCaCertFile,
+		}
+
+		batchStatusResponses := NewBatchStatusRenderable()
+
+		for _, statusTaskID := range batchTaskID {
+
+			statusResponse, err := Status(models.StatusRequest{TaskID: statusTaskID},
+				*statusHost, permission)
+
+			if err != nil {
+				fmt.Printf("error getting status for task %s:\n %s\n",
+					statusTaskID, err.Error())
+			} else {
+				batchStatusResponses.AddResponse(*statusResponse)
+			}
+		}
+
+		renderable = batchStatusResponses
+
+	} else {
+		fmt.Println("error parsing arguments")
 		os.Exit(1)
 	}
 
-	defer r.Body.Close()
-	responseBody, responseError := ioutil.ReadAll(r.Body)
-	if responseError != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
-	fmt.Printf("%s", responseBody)
+	Render(renderable, os.Stdout)
 }
 
-// newClient creates a new tls client from key and certs
-func newClient(certFile string, keyFile string, caCertFile string) (*http.Client, error) {
+// arrayFlags is used to manage batch requests to status using multiple task_ids
+type arrayFlags []string
 
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, err
+func (flags *arrayFlags) String() string {
+	var sb strings.Builder
+	first := true
+	for _, flag := range *flags {
+		if !first {
+			sb.WriteString(", ")
+		}
+		sb.WriteString(flag)
+		first = false
 	}
 
-	// TODO add command line arg for cacert
-	caCert, err := ioutil.ReadFile(caCertFile)
-	if err != nil {
-		return nil, err
-	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
-
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs:      caCertPool,
-				Certificates: []tls.Certificate{cert},
-			},
-		},
-	}, nil
+	return sb.String()
 }
 
-// TODO could return a config object holding this information
-
-// ReadArgs populates the common parameters between the 3 endpoints and returns request interface.
-func ReadArgs(args []string, endpoint *string, certFile *string, keyFile *string, host *string) (body interface{}, err error) {
-
-	commonArgs := flag.NewFlagSet("api", flag.ExitOnError)
-
-	certFilePtr := commonArgs.String("cert", "", "path to cert file")
-	keyFilePtr := commonArgs.String("key", "", "path to key file")
-	hostPtr := commonArgs.String("host", "", "endpoint of request")
-	*endpoint = args[1]
-
-	switch *endpoint {
-	case "start":
-		startCommandPtr := commonArgs.String("command", "", "command to exec")
-		commonArgs.Parse(os.Args[2:])
-		body = models.StartRequest{Command: *startCommandPtr}
-	case "stop":
-		stopTaskID := commonArgs.String("task_id", "", "task_id of process")
-		commonArgs.Parse(os.Args[2:])
-		body = models.StopRequest{TaskID: *stopTaskID}
-	case "status":
-		statusTaskID := commonArgs.String("task_id", "", "task_id of process")
-		commonArgs.Parse(os.Args[2:])
-		body = models.StatusRequest{TaskID: *statusTaskID}
-	default:
-		err = errors.New("invalid command")
-	}
-
-	*certFile = *certFilePtr
-	*keyFile = *keyFilePtr
-	*host = *hostPtr
-
-	return body, err
+func (flags *arrayFlags) Set(value string) error {
+	*flags = append(*flags, value)
+	return nil
 }
