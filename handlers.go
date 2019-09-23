@@ -29,17 +29,17 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	taskID := statusRequest.TaskID
 	alias := statusRequest.Alias
 
-	if taskID == "" && alias == "" {
+	if (taskID == "") == (alias == "") {
 		replyWithError(w, http.StatusBadRequest,
-			models.ErrorMessage{Error: "no task_id or alias provided"})
+			models.ErrorMessage{Error: "must provide one (and only one) of task_id or alias"})
 		return
 	}
 
-	var ProcessStatusResponse *models.StatusResponse
+	var StatusResponse *models.StatusResponse
 	if taskID != "" {
-		ProcessStatusResponse, err = GetProcessStatus(taskID)
+		StatusResponse, err = GetProcessStatus(taskID)
 	} else {
-		ProcessStatusResponse, err = GetProcessStatusByAlias(statusRequest.Alias)
+		StatusResponse, err = GetProcessStatusByAlias(statusRequest.Alias)
 	}
 
 	if err != nil {
@@ -50,7 +50,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(ProcessStatusResponse)
+	err = json.NewEncoder(w).Encode(StatusResponse)
 	if err != nil {
 		log.Printf("StatusHandler failed to encode with: [%s]", err.Error())
 		return
@@ -75,13 +75,21 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	taskID := stopRequest.TaskID
-	if taskID == "" {
+	alias := stopRequest.Alias
+
+	if (taskID == "") == (alias == "") {
 		replyWithError(w, http.StatusBadRequest,
-			models.ErrorMessage{Error: "no task_id provided"})
+			models.ErrorMessage{Error: "must provide one (and only one) of task_id or alias"})
 		return
 	}
 
-	StopResponse, err := StopProcess(taskID)
+	var StopResponse *models.StopResponse
+	if taskID != "" {
+		StopResponse, err = StopProcess(taskID)
+	} else {
+		StopResponse, err = StopProcessByAlias(stopRequest.Alias)
+	}
+
 	if err != nil {
 		// TODO handle different error cases
 		replyWithError(w, http.StatusExpectationFailed,

@@ -51,6 +51,7 @@ type StartRequest struct {
 // StopRequest structure encapsulates body fields for stop endpoint.
 type StopRequest struct {
 	TaskID string `json:"task_id,omitempty"`
+	Alias  string `json:"alias,omitempty"`
 }
 
 // StatusRequest structure encapsulates body fields for status endpoint.

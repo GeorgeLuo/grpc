@@ -25,7 +25,7 @@ func main() {
 	startKeyFile := startCommand.String("key", "key.pem", "path to key file")
 	startHost := startCommand.String("host", "localhost", "endpoint of request")
 	startExec := startCommand.String("command", "", "command to exec")
-	startAlias := startCommand.String("alias", "", "alias for task id")
+	startAlias := startCommand.String("alias", "", "alias for process")
 	startFormatted := startCommand.Bool("t", false, "generate output as table")
 
 	stopCommand := flag.NewFlagSet("stop", flag.ExitOnError)
@@ -34,6 +34,7 @@ func main() {
 	stopKeyFile := stopCommand.String("key", "key.pem", "path to key file")
 	stopHost := stopCommand.String("host", "localhost", "endpoint of request")
 	stopTaskID := stopCommand.String("task_id", "", "task_id of process")
+	stopAlias := stopCommand.String("alias", "", "alias for process")
 	stopFormatted := stopCommand.Bool("t", false, "generate output as table")
 
 	var batchTaskID arrayFlags
@@ -43,7 +44,7 @@ func main() {
 	statusCaCertFile := statusCommand.String("cacert", "", "path to cacert file")
 	statusKeyFile := statusCommand.String("key", "key.pem", "path to key file")
 	statusHost := statusCommand.String("host", "localhost", "endpoint of request")
-	statusAlias := statusCommand.String("alias", "", "alias for task id")
+	statusAlias := statusCommand.String("alias", "", "alias for process")
 	statusFormatted := statusCommand.Bool("t", false, "generate output as table")
 
 	statusCommand.Var(&batchTaskID, "task_id", "task_id of process")
@@ -98,8 +99,19 @@ func main() {
 			CaCertFile: *stopCaCertFile,
 		}
 
-		stopResponse, err := Stop(models.StopRequest{TaskID: *stopTaskID},
-			*stopHost, permission)
+		if (*stopAlias != "") == (*stopTaskID != "") {
+			fmt.Println("error: must provide one (and only one) of task_id or alias")
+			os.Exit(1)
+		}
+
+		var stopResponse *models.StopResponse
+		if *stopAlias != "" {
+			stopResponse, err = Stop(models.StopRequest{Alias: *stopAlias},
+				*stopHost, permission)
+		} else {
+			stopResponse, err = Stop(models.StopRequest{TaskID: *stopTaskID},
+				*stopHost, permission)
+		}
 
 		if err != nil {
 			fmt.Printf("error sending stop:\n %s\n", err.Error())
@@ -128,8 +140,6 @@ func main() {
 		// will eventually contain multiple processes. The Status method will return
 		// a slice of renderable responses.
 		if *statusAlias != "" {
-			b := NewBatchRenderable(*statusAlias)
-
 			statusResponse, err := Status(models.StatusRequest{
 				Alias: *statusAlias,
 			}, *statusHost, permission)
@@ -138,9 +148,10 @@ func main() {
 				fmt.Printf("error getting status for alias %s:\n %s\n",
 					*statusAlias, err.Error())
 			} else {
+				b := NewBatchRenderable(*statusAlias)
 				b.AddRow(NewRenderableStatusResponse(statusResponse))
+				renderable = append(renderable, b)
 			}
-			renderable = append(renderable, b)
 		}
 
 		b := NewBatchRenderable("")

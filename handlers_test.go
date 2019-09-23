@@ -41,7 +41,7 @@ func TestStatusWithInvalidTaskID(t *testing.T) {
 	expectedError := "invalid task_id"
 
 	if errorMessage.Error != expectedError {
-		t.Errorf("handler returned unexpected body: got %v want %v",
+		t.Errorf("handler returned unexpected body: got [%v] want [%v]",
 			errorMessage.Error, expectedError)
 	}
 }
@@ -103,7 +103,37 @@ func TestStopProcessBasic(t *testing.T) {
 	time.Sleep(1 * time.Second) // now stop process
 
 	var stopResponse models.StopResponse
-	status = stopProcess(t, startResponse.TaskID, &stopResponse, APIRouter)
+	status = stopProcessByTaskID(t, startResponse.TaskID, &stopResponse, APIRouter)
+
+	if status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	if *stopResponse.ExitCode != -1 {
+		t.Errorf("command exit code returned unexpected value: got %d want %d",
+			stopResponse.ExitCode, -1)
+	}
+}
+
+// TestAliasedStopProcessBasic validates stop command with aliased task id.
+func TestAliasedStopProcessBasic(t *testing.T) {
+	command := "sleep 5"
+	testAlias := "sleep-1"
+	APIRouter := newAPIRouter()
+
+	var startResponse models.StartResponse
+	status := startProcess(t, command, testAlias, &startResponse, APIRouter)
+
+	if status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	time.Sleep(1 * time.Second) // now stop process
+
+	var stopResponse models.StopResponse
+	status = stopProcessByAlias(t, testAlias, &stopResponse, APIRouter)
 
 	if status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -117,7 +147,7 @@ func TestStopProcessBasic(t *testing.T) {
 }
 
 // TestAliasedStartProcessBasic validates start command with aliased task id.
-func TestAliasedStartProcessBasic(t *testing.T) {
+func TestAliasedStartAProcessBasic(t *testing.T) {
 
 	command := "echo 12345"
 	testAlias := "echo-1"
@@ -182,12 +212,25 @@ func startProcess(t *testing.T, command string, alias string,
 	return rr.Code
 }
 
+// Helper method to process stop a process by alias.
+func stopProcessByAlias(t *testing.T, alias string,
+	stopResponse *models.StopResponse, r *mux.Router) int {
+	return stopProcess(t, models.StopRequest{Alias: alias}, stopResponse, r)
+}
+
+// Helper method to process status request by task id.
+func stopProcessByTaskID(t *testing.T, taskID string,
+	stopResponse *models.StopResponse, r *mux.Router) int {
+	return stopProcess(t,
+		models.StopRequest{TaskID: taskID}, stopResponse, r)
+}
+
 // Helper method to send stop request.
-func stopProcess(t *testing.T, taskID string,
+func stopProcess(t *testing.T, sr models.StopRequest,
 	stopResponse *models.StopResponse, r *mux.Router) int {
 
 	body := new(bytes.Buffer)
-	json.NewEncoder(body).Encode(models.StopRequest{TaskID: taskID})
+	json.NewEncoder(body).Encode(sr)
 
 	stopRequest, err := http.NewRequest("POST", "/stop", body)
 

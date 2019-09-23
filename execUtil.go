@@ -33,7 +33,7 @@ func init() {
 	aliasMap = NewAliasMap()
 }
 
-// GetProcessStatusByAlias function to get command from alias mapping
+// GetProcessStatusByAlias retrieves status using alias mapped to task_id(s)
 func GetProcessStatusByAlias(alias string) (*models.StatusResponse, error) {
 	if taskID, ok := aliasMap.Get(alias); ok {
 		return GetProcessStatus(taskID[0])
@@ -126,6 +126,15 @@ func RunCommand(command string, alias string) (*models.StartResponse, error) {
 
 func intPtr(value int) *int {
 	return &value
+}
+
+// StopProcessByAlias stops process using alias mapped to task_id(s)
+func StopProcessByAlias(alias string) (*models.StopResponse, error) {
+	if taskID, ok := aliasMap.Get(alias); ok {
+		return StopProcess(taskID[0])
+	}
+
+	return nil, errors.New("alias not mapped")
 }
 
 // StopProcess ends a previously started process.
