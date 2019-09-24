@@ -52,7 +52,7 @@ func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 
 	// validate task_id
 	if command, ok = taskIDCommandMap.Get(taskID); !ok {
-		return nil, errors.New("invalid task_id")
+		return nil, errors.New("no process mapped to task_id")
 	}
 
 	// TODO refactor this into un/finished process

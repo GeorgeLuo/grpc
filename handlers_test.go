@@ -38,7 +38,7 @@ func TestStatusWithInvalidTaskID(t *testing.T) {
 			status, http.StatusBadRequest)
 	}
 
-	expectedError := "invalid task_id"
+	expectedError := "no process mapped to task_id"
 
 	if errorMessage.Error != expectedError {
 		t.Errorf("handler returned unexpected body: got [%v] want [%v]",
