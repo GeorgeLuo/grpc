@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -19,6 +20,7 @@ import (
 
 var taskIDCommandMap SyncMap
 var hostname string
+var aliasMap AliasMap
 
 func init() {
 	var err error
@@ -28,6 +30,16 @@ func init() {
 	}
 
 	taskIDCommandMap = NewMap()
+	aliasMap = NewAliasMap()
+}
+
+// GetProcessStatusByAlias retrieves status using alias mapped to task_id(s)
+func GetProcessStatusByAlias(alias string) (*models.StatusResponse, error) {
+	if taskID, ok := aliasMap.Get(alias); ok {
+		return GetProcessStatus(taskID[0])
+	}
+
+	return nil, errors.New("alias not mapped")
 }
 
 // GetProcessStatus retrieves the status of the process specified with taskID.
@@ -40,7 +52,7 @@ func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 
 	// validate task_id
 	if command, ok = taskIDCommandMap.Get(taskID); !ok {
-		return nil, errors.New("invalid task_id")
+		return nil, errors.New("no process mapped to task_id")
 	}
 
 	// TODO refactor this into un/finished process
@@ -61,7 +73,7 @@ func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 }
 
 // RunCommand starts a process from command argument.
-func RunCommand(command string) (*models.StartResponse, error) {
+func RunCommand(command string, alias string) (*models.StartResponse, error) {
 
 	var startResponse models.StartResponse
 	splitCommand := strings.Split(command, " ")
@@ -87,7 +99,16 @@ func RunCommand(command string) (*models.StartResponse, error) {
 	taskID := hostname + "-" + strconv.Itoa(pgid) // TODO handle if Process or Pid nil
 	startResponse.TaskID = taskID
 
+	// TODO: perhaps handle duplicate taskID with error from Put
 	taskIDCommandMap.Put(taskID, NewCommandWrapper(cmd, outBuf))
+
+	if alias != "" {
+		err = aliasMap.Put(alias, taskID)
+		if err != nil {
+			return nil, fmt.Errorf("no process started, alias map err: %s",
+				err.Error())
+		}
+	}
 
 	go func() {
 		// TODO add append error to CommandWrapper, impl accessors and setters
@@ -105,6 +126,15 @@ func RunCommand(command string) (*models.StartResponse, error) {
 
 func intPtr(value int) *int {
 	return &value
+}
+
+// StopProcessByAlias stops process using alias mapped to task_id(s)
+func StopProcessByAlias(alias string) (*models.StopResponse, error) {
+	if taskID, ok := aliasMap.Get(alias); ok {
+		return StopProcess(taskID[0])
+	}
+
+	return nil, errors.New("alias not mapped")
 }
 
 // StopProcess ends a previously started process.

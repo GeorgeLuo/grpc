@@ -27,18 +27,30 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	taskID := statusRequest.TaskID
+	alias := statusRequest.Alias
 
-	ProcessStatusResponse, err := GetProcessStatus(taskID)
+	if (taskID == "") == (alias == "") {
+		replyWithError(w, http.StatusBadRequest,
+			models.ErrorMessage{Error: "must provide one (and only one) of task_id or alias"})
+		return
+	}
+
+	var StatusResponse *models.StatusResponse
+	if taskID != "" {
+		StatusResponse, err = GetProcessStatus(taskID)
+	} else {
+		StatusResponse, err = GetProcessStatusByAlias(statusRequest.Alias)
+	}
 
 	if err != nil {
 		replyWithError(w, http.StatusBadRequest,
-			models.ErrorMessage{TaskID: &taskID, Error: err.Error()})
+			models.ErrorMessage{Error: err.Error()})
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(ProcessStatusResponse)
+	err = json.NewEncoder(w).Encode(StatusResponse)
 	if err != nil {
 		log.Printf("StatusHandler failed to encode with: [%s]", err.Error())
 		return
@@ -63,14 +75,21 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	taskID := stopRequest.TaskID
+	alias := stopRequest.Alias
 
-	if taskID == "" {
+	if (taskID == "") == (alias == "") {
 		replyWithError(w, http.StatusBadRequest,
-			models.ErrorMessage{Error: "no task_id provided"})
+			models.ErrorMessage{Error: "must provide one (and only one) of task_id or alias"})
 		return
 	}
 
-	StopResponse, err := StopProcess(taskID)
+	var StopResponse *models.StopResponse
+	if taskID != "" {
+		StopResponse, err = StopProcess(taskID)
+	} else {
+		StopResponse, err = StopProcessByAlias(stopRequest.Alias)
+	}
+
 	if err != nil {
 		// TODO handle different error cases
 		replyWithError(w, http.StatusExpectationFailed,
@@ -112,7 +131,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	RunCommandResponse, err := RunCommand(command)
+	RunCommandResponse, err := RunCommand(command, startRequest.Alias)
 
 	if err != nil {
 		// TODO handle different error cases, namely separate invalid task_id

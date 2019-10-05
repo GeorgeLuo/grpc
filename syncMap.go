@@ -21,7 +21,7 @@ func NewMap() SyncMap {
 	}
 }
 
-// Put is an operation insert a new process in a SyncMap.
+// Put is an operation to insert a new process in a SyncMap.
 func (rwm *SyncMap) Put(taskID string, cmd *CommandWrapper) {
 	rwm.mutex.Lock()
 	defer rwm.mutex.Unlock()
@@ -33,7 +33,7 @@ func (rwm *SyncMap) Get(taskID string) (cmd *CommandWrapper, ok bool) {
 	rwm.mutex.Lock()
 	defer rwm.mutex.Unlock()
 	cmd, ok = rwm.cmdMap[taskID]
-	return cmd, ok
+	return
 }
 
 // CommandWrapper encapsulates an exec.Cmd object with status metadata.
