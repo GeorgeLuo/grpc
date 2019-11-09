@@ -16,22 +16,22 @@ sudo docker run --volume "$(pwd)":/go/src/github.com/GeorgeLuo/grpc --interactiv
 ```
 Run go server, exposed to port 8443
 ```
-go run main.go handlers.go execUtil.go syncOutput.go syncMap.go taskAlias.go
+go run main.go coreHandlers.go execUtil.go syncOutput.go syncMap.go taskAlias.go
 ```
 
 ### Use grpc server with client
 use client.go as cli-like process. To start
 
 ```
-go run client/* start -cert cert.pem -key key.pem -command ./test_process.sh -host localhost
+go run grpc-client/* start -cert cert.pem -key key.pem -command ./test_process.sh -host localhost
 ```
 to stop
 ```
-go run client/* stop -cert cert.pem -key key.pem -task_id "987f769fca40-3635" -host localhost
+go run grpc-client/* stop -cert cert.pem -key key.pem -task_id "987f769fca40-3635" -host localhost
 ```
 to get status
 ```
-go run client/* status -cert cert.pem -key key.pem -task_id "987f769fca40-3635" -host localhost
+go run grpc-client/* status -cert cert.pem -key key.pem -task_id "987f769fca40-3635" -host localhost
 ```
 
 The status subcommand also supports multiple task_ids in param. This is done by providing more than one task_id parameter.
