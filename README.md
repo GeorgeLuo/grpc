@@ -105,3 +105,9 @@ The first “/keys” directory is the directory from the host running the docke
 ```
 grpc-client start -host XXX.XXX.XXX.XX -command some_command
 ```
+
+## TODO
+
+- Support alias mapping for multiple commands
+- Scheduling job
+- proxy jobs between hosts
