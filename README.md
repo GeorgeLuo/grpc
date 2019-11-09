@@ -89,6 +89,8 @@ req_extensions          = san_reqext
 [ san_reqext ]
 subjectAltName      = @alt_names
 
+...
+
 [ alt_names ]
 IP.0            = XXX.XXX.XXX.XX
 ```
