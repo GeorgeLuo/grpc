@@ -68,11 +68,11 @@ curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https
 
 Or using the cli, to start using an alias
 ```
-go run client/* start -cert cert.pem -key key.pem -command ./test_process.sh -alias test_proc -host localhost
+go run grpc-client/* start -cert cert.pem -key key.pem -command ./test_process.sh -alias test_proc -host localhost
 ```
 to get status with alias
 ```
-go run client/* status -cert cert.pem -key key.pem -alias test_proc -host localhost
+go run grpc-client/* status -cert cert.pem -key key.pem -alias test_proc -host localhost
 ```
 
 Note in the case a task id AND an alias is provided (to status or stop endpoint), the alias will take priority in evaluation. If the alias is not mapped, the task id will NOT resolve. This is due to future consideration where alias will encapsulate multiple processes and will provide the more complex output.
