@@ -21,6 +21,10 @@ func main() {
 		Methods("POST")
 	router.HandleFunc("/stop", StopHandler).
 		Methods("POST")
+	router.HandleFunc("/job/status", JobStatusHandler).
+		Methods("POST")
+	router.HandleFunc("/job/start", JobStartHandler).
+		Methods("POST")
 
 	// Create a CA certificate pool and add cert.pem to it
 	caCert, err := ioutil.ReadFile("cert.pem")

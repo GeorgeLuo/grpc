@@ -1,3 +1,7 @@
 8/12/19 - Initial commit. An mvp serving endpoints to start a server listening on 8443. Does not handle error cases or invalid input.
 
 9/2/19 - Client and mTLS code added. General refactoring.
+
+11/9/19 - Alias jobs are implemented by forming a set of commands to fire on a client start.
+On the client end, commands are stored locally until a start request is ready.
+grpc-client initAlias -alias some_alias -command /command_1.sh 

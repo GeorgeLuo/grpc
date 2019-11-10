@@ -20,7 +20,9 @@ import (
 
 var taskIDCommandMap SyncMap
 var hostname string
-var aliasMap AliasMap
+
+// GlobalAliasMap is used to retrieve task_ids started under an alias
+var GlobalAliasMap AliasMap
 
 func init() {
 	var err error
@@ -30,12 +32,12 @@ func init() {
 	}
 
 	taskIDCommandMap = NewMap()
-	aliasMap = NewAliasMap()
+	GlobalAliasMap = NewAliasMap()
 }
 
 // GetProcessStatusByAlias retrieves status using alias mapped to task_id(s)
 func GetProcessStatusByAlias(alias string) (*models.StatusResponse, error) {
-	if taskID, ok := aliasMap.Get(alias); ok {
+	if taskID, ok := GlobalAliasMap.Get(alias); ok {
 		return GetProcessStatus(taskID[0])
 	}
 
@@ -103,7 +105,7 @@ func RunCommand(command string, alias string) (*models.StartResponse, error) {
 	taskIDCommandMap.Put(taskID, NewCommandWrapper(cmd, outBuf))
 
 	if alias != "" {
-		err = aliasMap.Put(alias, taskID)
+		err = GlobalAliasMap.Put(alias, taskID)
 		if err != nil {
 			return nil, fmt.Errorf("no process started, alias map err: %s",
 				err.Error())
@@ -130,7 +132,7 @@ func intPtr(value int) *int {
 
 // StopProcessByAlias stops process using alias mapped to task_id(s)
 func StopProcessByAlias(alias string) (*models.StopResponse, error) {
-	if taskID, ok := aliasMap.Get(alias); ok {
+	if taskID, ok := GlobalAliasMap.Get(alias); ok {
 		return StopProcess(taskID[0])
 	}
 

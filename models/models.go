@@ -59,3 +59,37 @@ type StatusRequest struct {
 	TaskID string `json:"task_id,omitempty"`
 	Alias  string `json:"alias,omitempty"`
 }
+
+// JOB MODEL DEFINITIONS BEGIN
+
+// JobStartResponse structure encapsulates body fields for job start response,
+// a wrapper for all the associated tasks.
+type JobStartResponse struct {
+	StartResponses []StartResponse `json:"tasks,omitempty"`
+	Alias          string          `json:"alias,omitempty"`
+}
+
+// JobStatusResponse structure encapsulates body fields for job status,
+// a wrapper for all the associated tasks.
+type JobStatusResponse struct {
+	StatusResponses []StatusResponse `json:"tasks,omitempty"`
+	Alias           string           `json:"alias,omitempty"`
+	Errors          []error          `json:"errors,omitempty"`
+}
+
+// TODO: The []StartRequest can be reduced to []string, keeping the object
+// array for now in case StartRequest will contain more metadata
+// (Scheduling parameters).
+
+// JobStartRequest structure wraps multiple start requests with an associated
+// alias.
+type JobStartRequest struct {
+	StartRequests []StartRequest `json:"tasks,omitempty"`
+	Alias         string         `json:"alias,omitempty"`
+}
+
+// JobStatusRequest structure wraps multiple status requests with an associated
+// alias.
+type JobStatusRequest struct {
+	Alias string `json:"alias,omitempty"`
+}

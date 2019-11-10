@@ -16,7 +16,7 @@ sudo docker run --volume "$(pwd)":/go/src/github.com/GeorgeLuo/grpc --interactiv
 ```
 Run go server, exposed to port 8443
 ```
-go run main.go coreHandlers.go execUtil.go syncOutput.go syncMap.go taskAlias.go
+go run main.go coreHandlers.go coreExecUtil.go syncOutput.go syncMap.go taskAlias.go
 ```
 
 ### Use grpc server with client
@@ -113,3 +113,6 @@ grpc-client start -host XXX.XXX.XXX.XX -command some_command
 - Support alias mapping for multiple commands
 - Scheduling job
 - proxy jobs between hosts
+- pass in json files to define jobs of alias mapped to commands
+- server side configs for location of scripts/processes
+- client side configs for location of job definitions
