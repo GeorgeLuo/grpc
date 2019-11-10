@@ -21,8 +21,8 @@ func RunJob(startRequests []models.StartRequest,
 		startResponse, err := RunCommand(request.Command, request.Alias)
 		if err != nil {
 			bailErr := bailCommands(successTaskIDs)
-			if bailErr != nil {
-				err = AppendError(err, bailErr)
+			if len(bailErr) > 0 {
+				err = AppendError(err, bailErr...)
 			}
 			return nil, err
 		}
@@ -62,12 +62,14 @@ func GetJobStatusByAlias(alias string) (*models.JobStatusResponse, error) {
 }
 
 // terminates processes with taskIDs provided
-func bailCommands(taskIDs []string) error {
+func bailCommands(taskIDs []string) []error {
+	var errors []error
+
 	for _, taskID := range taskIDs {
 		_, err := StopProcess(taskID)
 		if err != nil {
-			return err
+			errors = append(errors, err)
 		}
 	}
-	return nil
+	return errors
 }
