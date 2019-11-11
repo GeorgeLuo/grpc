@@ -27,3 +27,26 @@ type StopResponse struct {
 	TaskID   string `json:"task_id"`
 	ExitCode *int   `json:"exit_code,omitempty"`
 }
+
+// JobStartResponse structure encapsulates body fields for job start response,
+// a wrapper for all the associated tasks.
+type JobStartResponse struct {
+	Alias          string          `json:"alias,omitempty"`
+	StartResponses []StartResponse `json:"tasks,omitempty"`
+}
+
+// JobStatusResponse structure encapsulates body fields for job status,
+// a wrapper for all the associated tasks.
+type JobStatusResponse struct {
+	Alias           string           `json:"alias,omitempty"`
+	StatusResponses []StatusResponse `json:"tasks,omitempty"`
+	Errors          []string         `json:"errors,omitempty"`
+}
+
+// JobStopResponse structure encapsulates body fields for a job stop response,
+// a wrapper for all the associated task stop output.
+type JobStopResponse struct {
+	Alias         string         `json:"alias,omitempty"`
+	StopResponses []StopResponse `json:"tasks,omitempty"`
+	Errors        []string       `json:"errors,omitempty"`
+}

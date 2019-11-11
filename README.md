@@ -77,6 +77,22 @@ go run grpc-client/* status -cert cert.pem -key key.pem -alias test_proc -host l
 
 Note in the case a task id AND an alias is provided (to status or stop endpoint), the alias will take priority in evaluation. If the alias is not mapped, the task id will NOT resolve. This is due to future consideration where alias will encapsulate multiple processes and will provide the more complex output.
 
+## Execute Jobs
+
+Jobs are collections of processes to execute under a single job alias. A job alias may not take the same name as a previously taken alias naming a task (and vice-versa). Tasks are formed within the request in the same format as a standard task (can still be aliased). Naming a task within the job with the same alias will lead to unexpected behavior (to be determined what that is).
+
+A task that fails under a job's execution will trigger a bailout of the previously fired tasks. Logically, identical to sending a stop process on each of the task_ids within a job. This action should eventually be configured as an option.
+
+A sample start:
+```
+curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https://localhost:8443/jobs/start   -H 'Content-Type: application/json'   -d '{"alias":"test","tasks":[{"command":"echo 1"},{"command":"echo 2"},{"command":"echo 3"},{"command":"echo 4"},{"command":"echo 5"}]}'
+```
+
+status:
+```
+curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https://localhost:8443/jobs/status   -H 'Content-Type: application/json'   -d '{"alias":"test"}'
+```
+
 ## Remote Usage With Docker
 
 To generate a set of cert and key, run the ./bin/generate-keys-remote.sh executable, and make the additions to your openssl.cnf file:

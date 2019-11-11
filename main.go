@@ -23,9 +23,13 @@ func main() {
 		Methods("POST")
 	router.HandleFunc("/stop", core.StopHandler).
 		Methods("POST")
-	router.HandleFunc("/job/status", jobs.JobStatusHandler).
+	router.HandleFunc("/jobs/status", jobs.JobStatusHandler).
 		Methods("POST")
-	router.HandleFunc("/job/start", jobs.JobStartHandler).
+	router.HandleFunc("/jobs/start", jobs.JobStartHandler).
+		Methods("POST")
+	router.HandleFunc("/jobs/status", jobs.JobStatusHandler).
+		Methods("POST")
+	router.HandleFunc("/jobs/stop", jobs.JobStopHandler).
 		Methods("POST")
 
 	// Create a CA certificate pool and add cert.pem to it

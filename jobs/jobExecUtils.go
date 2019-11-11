@@ -22,9 +22,9 @@ func RunJob(startRequests []models.StartRequest,
 	for _, request := range startRequests {
 		startResponse, err := core.RunCommand(request.Command, request.Alias)
 		if err != nil {
-			bailErr := bailCommands(successTaskIDs)
+			bailErr := stopCommands(successTaskIDs)
 			if len(bailErr) > 0 {
-				err = utils.AppendError(err, bailErr...)
+				err = utils.AppendStringToError(err, bailErr...)
 			}
 			return nil, err
 		}
@@ -47,12 +47,12 @@ func GetJobStatusByAlias(alias string) (*models.JobStatusResponse, error) {
 	}
 
 	var jobStatusResponse models.JobStatusResponse
-	var statusErrors []error
+	var statusErrors []string
 
 	for _, taskID := range taskIDs {
 		statusResponse, err := core.GetProcessStatus(taskID)
 		if err != nil {
-			statusErrors = append(statusErrors, err)
+			statusErrors = append(statusErrors, err.Error())
 		} else {
 			jobStatusResponse.StatusResponses =
 				append(jobStatusResponse.StatusResponses, *statusResponse)
@@ -63,14 +63,28 @@ func GetJobStatusByAlias(alias string) (*models.JobStatusResponse, error) {
 	return &jobStatusResponse, nil
 }
 
+// StopJobByAlias stops all tasks linked to the job alias.
+func StopJobByAlias(alias string) (*models.JobStopResponse, error) {
+
+	taskIDs, ok := core.GlobalAliasMap.Get(alias)
+	if !ok {
+		return nil, errors.New("alias not mapped")
+	}
+
+	var jobStopResponse models.JobStopResponse
+
+	jobStopResponse.Errors = stopCommands(taskIDs)
+	return &jobStopResponse, nil
+}
+
 // terminates processes with taskIDs provided
-func bailCommands(taskIDs []string) []error {
-	var errors []error
+func stopCommands(taskIDs []string) []string {
+	var errors []string
 
 	for _, taskID := range taskIDs {
 		_, err := core.StopProcess(taskID)
 		if err != nil {
-			errors = append(errors, err)
+			errors = append(errors, err.Error())
 		}
 	}
 	return errors
