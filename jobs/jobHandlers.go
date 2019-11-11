@@ -1,4 +1,4 @@
-package main
+package jobs
 
 import (
 	"encoding/json"
@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/GeorgeLuo/grpc/core"
 	"github.com/GeorgeLuo/grpc/models"
 )
 
@@ -20,7 +21,7 @@ func JobStartHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		core.ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -28,7 +29,7 @@ func JobStartHandler(w http.ResponseWriter, r *http.Request) {
 	var jobStartRequest models.JobStartRequest
 	err = json.Unmarshal(body, &jobStartRequest)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		core.ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -37,7 +38,7 @@ func JobStartHandler(w http.ResponseWriter, r *http.Request) {
 	for i, request := range startRequests {
 		if request.Command == "" {
 			errMsg := fmt.Sprintf("command missing at index: %d", i)
-			replyWithError(w, http.StatusBadRequest,
+			core.ReplyWithError(w, http.StatusBadRequest,
 				models.ErrorMessage{Error: errMsg})
 			return
 		}
@@ -49,7 +50,7 @@ func JobStartHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// TODO handle different error cases, namely separate invalid task_id
 		// error code though this is not terribly illogical as a response
-		replyWithError(w, http.StatusExpectationFailed,
+		core.ReplyWithError(w, http.StatusExpectationFailed,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -67,7 +68,7 @@ func JobStartHandler(w http.ResponseWriter, r *http.Request) {
 func JobStatusHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		core.ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -75,7 +76,7 @@ func JobStatusHandler(w http.ResponseWriter, r *http.Request) {
 	var jobStatusRequest models.JobStatusRequest
 	err = json.Unmarshal(body, &jobStatusRequest)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		core.ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -83,7 +84,7 @@ func JobStatusHandler(w http.ResponseWriter, r *http.Request) {
 	alias := jobStatusRequest.Alias
 
 	if alias == "" {
-		replyWithError(w, http.StatusBadRequest,
+		core.ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: "no alias provided"})
 		return
 	}
@@ -92,7 +93,7 @@ func JobStatusHandler(w http.ResponseWriter, r *http.Request) {
 	jobStatusResponse, err = GetJobStatusByAlias(jobStatusRequest.Alias)
 
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		core.ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}

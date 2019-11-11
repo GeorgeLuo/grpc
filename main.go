@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/GeorgeLuo/grpc/core"
+	"github.com/GeorgeLuo/grpc/jobs"
 	"github.com/gorilla/mux"
 )
 
@@ -15,15 +17,15 @@ import (
 func main() {
 	log.Println("setting up handlers ...")
 	router := mux.NewRouter()
-	router.HandleFunc("/status", StatusHandler).
+	router.HandleFunc("/status", core.StatusHandler).
 		Methods("POST")
-	router.HandleFunc("/start", StartHandler).
+	router.HandleFunc("/start", core.StartHandler).
 		Methods("POST")
-	router.HandleFunc("/stop", StopHandler).
+	router.HandleFunc("/stop", core.StopHandler).
 		Methods("POST")
-	router.HandleFunc("/job/status", JobStatusHandler).
+	router.HandleFunc("/job/status", jobs.JobStatusHandler).
 		Methods("POST")
-	router.HandleFunc("/job/start", JobStartHandler).
+	router.HandleFunc("/job/start", jobs.JobStartHandler).
 		Methods("POST")
 
 	// Create a CA certificate pool and add cert.pem to it

@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"errors"
@@ -18,11 +18,11 @@ import (
 
 // TODO prune finished tasks when some max map size is reached
 
-var taskIDCommandMap SyncMap
+var taskIDCommandMap models.SyncMap
 var hostname string
 
 // GlobalAliasMap is used to retrieve task_ids started under an alias
-var GlobalAliasMap AliasMap
+var GlobalAliasMap models.AliasMap
 
 func init() {
 	var err error
@@ -31,8 +31,8 @@ func init() {
 		panic(err)
 	}
 
-	taskIDCommandMap = NewMap()
-	GlobalAliasMap = NewAliasMap()
+	taskIDCommandMap = models.NewMap()
+	GlobalAliasMap = models.NewAliasMap()
 }
 
 // GetProcessStatusByAlias retrieves status using alias mapped to task_id(s)
@@ -49,7 +49,7 @@ func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 
 	var statusResponse models.StatusResponse
 
-	var command *CommandWrapper
+	var command *models.CommandWrapper
 	var ok bool
 
 	// validate task_id
@@ -83,7 +83,7 @@ func RunCommand(command string, alias string) (*models.StartResponse, error) {
 	cmd := exec.Command(splitCommand[0], splitCommand[1:]...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	outBuf := NewOutput()
+	outBuf := models.NewOutput()
 	cmd.Stdout = io.MultiWriter(os.Stdout, outBuf)
 
 	err := cmd.Start()
@@ -102,7 +102,7 @@ func RunCommand(command string, alias string) (*models.StartResponse, error) {
 	startResponse.TaskID = taskID
 
 	// TODO: perhaps handle duplicate taskID with error from Put
-	taskIDCommandMap.Put(taskID, NewCommandWrapper(cmd, outBuf))
+	taskIDCommandMap.Put(taskID, models.NewCommandWrapper(cmd, outBuf))
 
 	if alias != "" {
 		err = GlobalAliasMap.Put(alias, taskID)
@@ -146,7 +146,7 @@ func StopProcess(taskID string) (*models.StopResponse, error) {
 
 	stopResponse.TaskID = taskID
 
-	var command *CommandWrapper
+	var command *models.CommandWrapper
 	var ok bool
 
 	// if task_id invalid, return error.

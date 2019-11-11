@@ -5,10 +5,10 @@ sudo docker build -t grpc --file Dockerfile.dev .
 ```
 Generate key and cert for mutual TLS. These default locations will place the key/cert local to where the command is ran. Changing the location will require configuration in the server and client to reference correctly.
 ```
-chmod +x generate-keys.sh
+chmod +x ./bin/generate-keys.sh
 ```
 ```
-./generate-keys.sh
+./bin/generate-keys.sh
 ```
 Initialize dev environment
 ```
@@ -16,14 +16,14 @@ sudo docker run --volume "$(pwd)":/go/src/github.com/GeorgeLuo/grpc --interactiv
 ```
 Run go server, exposed to port 8443
 ```
-go run main.go coreHandlers.go coreExecUtil.go syncOutput.go syncMap.go taskAlias.go
+go run *.go
 ```
 
 ### Use grpc server with client
 use client.go as cli-like process. To start
 
 ```
-go run grpc-client/* start -cert cert.pem -key key.pem -command ./test_process.sh -host localhost
+go run grpc-client/* start -cert cert.pem -key key.pem -command ./resources/test_process.sh -host localhost
 ```
 to stop
 ```
@@ -42,7 +42,7 @@ Following the above instructions to generate a key and cert with a self-signed c
 
 test a message to run a process using POST
 ```
-curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem  https://localhost:8443/start   -H 'Content-Type: application/json'   -d '{"command":"./test_process.sh"}'
+curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem  https://localhost:8443/start   -H 'Content-Type: application/json'   -d '{"command":"./resources/test_process.sh"}'
 ```
 test a message to stop a process using POST
 ```
@@ -58,7 +58,7 @@ curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https
 An alias can be provided to be used instead of a task id for record. Pass an alias to start as a field of the body.
 
 ```
-curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem  https://localhost:8443/start   -H 'Content-Type: application/json'   -d '{"command":"./test_process.sh", "alias":"test"}'
+curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem  https://localhost:8443/start   -H 'Content-Type: application/json'   -d '{"command":"./resources/test_process.sh", "alias":"test"}'
 ```
 
 Retrieve the status using the same aliases
@@ -68,7 +68,7 @@ curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https
 
 Or using the cli, to start using an alias
 ```
-go run grpc-client/* start -cert cert.pem -key key.pem -command ./test_process.sh -alias test_proc -host localhost
+go run grpc-client/* start -cert cert.pem -key key.pem -command ./resources/test_process.sh -alias test_proc -host localhost
 ```
 to get status with alias
 ```
@@ -79,7 +79,7 @@ Note in the case a task id AND an alias is provided (to status or stop endpoint)
 
 ## Remote Usage With Docker
 
-To generate a set of cert and key, run the generate-key-remote.sh executable, and make the additions to your openssl.cnf file:
+To generate a set of cert and key, run the ./bin/generate-keys-remote.sh executable, and make the additions to your openssl.cnf file:
 
 ```
 [ req ]

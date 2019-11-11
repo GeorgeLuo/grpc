@@ -1,9 +1,11 @@
-package main
+package jobs
 
 import (
 	"errors"
 
+	"github.com/GeorgeLuo/grpc/core"
 	"github.com/GeorgeLuo/grpc/models"
+	"github.com/GeorgeLuo/grpc/utils"
 )
 
 // the GlobalAliasMap referenced comes from the coreExecUtil definition
@@ -18,11 +20,11 @@ func RunJob(startRequests []models.StartRequest,
 	var successTaskIDs []string
 
 	for _, request := range startRequests {
-		startResponse, err := RunCommand(request.Command, request.Alias)
+		startResponse, err := core.RunCommand(request.Command, request.Alias)
 		if err != nil {
 			bailErr := bailCommands(successTaskIDs)
 			if len(bailErr) > 0 {
-				err = AppendError(err, bailErr...)
+				err = utils.AppendError(err, bailErr...)
 			}
 			return nil, err
 		}
@@ -32,14 +34,14 @@ func RunJob(startRequests []models.StartRequest,
 			*startResponse)
 	}
 
-	GlobalAliasMap.Put(alias, successTaskIDs...)
+	core.GlobalAliasMap.Put(alias, successTaskIDs...)
 	return &jobStartResponse, nil
 }
 
 // GetJobStatusByAlias retrieves status of a running job
 func GetJobStatusByAlias(alias string) (*models.JobStatusResponse, error) {
 
-	taskIDs, ok := GlobalAliasMap.Get(alias)
+	taskIDs, ok := core.GlobalAliasMap.Get(alias)
 	if !ok {
 		return nil, errors.New("alias not mapped")
 	}
@@ -48,7 +50,7 @@ func GetJobStatusByAlias(alias string) (*models.JobStatusResponse, error) {
 	var statusErrors []error
 
 	for _, taskID := range taskIDs {
-		statusResponse, err := GetProcessStatus(taskID)
+		statusResponse, err := core.GetProcessStatus(taskID)
 		if err != nil {
 			statusErrors = append(statusErrors, err)
 		} else {
@@ -66,7 +68,7 @@ func bailCommands(taskIDs []string) []error {
 	var errors []error
 
 	for _, taskID := range taskIDs {
-		_, err := StopProcess(taskID)
+		_, err := core.StopProcess(taskID)
 		if err != nil {
 			errors = append(errors, err)
 		}

@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -21,7 +21,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	var statusRequest models.StatusRequest
 	err = json.Unmarshal(body, &statusRequest)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -30,7 +30,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	alias := statusRequest.Alias
 
 	if (taskID == "") == (alias == "") {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: "must provide one (and only one) of task_id or alias"})
 		return
 	}
@@ -43,7 +43,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -61,7 +61,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 func StopHandler(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -69,7 +69,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 	var stopRequest models.StopRequest
 	err = json.Unmarshal(body, &stopRequest)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -78,7 +78,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 	alias := stopRequest.Alias
 
 	if (taskID == "") == (alias == "") {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: "must provide one (and only one) of task_id or alias"})
 		return
 	}
@@ -92,7 +92,7 @@ func StopHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		// TODO handle different error cases
-		replyWithError(w, http.StatusExpectationFailed,
+		ReplyWithError(w, http.StatusExpectationFailed,
 			models.ErrorMessage{TaskID: &taskID, Error: err.Error()})
 		return
 	}
@@ -111,7 +111,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -119,14 +119,14 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 	var startRequest models.StartRequest
 	err = json.Unmarshal(body, &startRequest)
 	if err != nil {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
 
 	command := startRequest.Command
 	if command == "" {
-		replyWithError(w, http.StatusBadRequest,
+		ReplyWithError(w, http.StatusBadRequest,
 			models.ErrorMessage{Error: "no command provided"})
 		return
 	}
@@ -136,7 +136,7 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// TODO handle different error cases, namely separate invalid task_id
 		// error code though this is not terribly illogical as a response
-		replyWithError(w, http.StatusExpectationFailed,
+		ReplyWithError(w, http.StatusExpectationFailed,
 			models.ErrorMessage{Error: err.Error()})
 		return
 	}
@@ -150,14 +150,14 @@ func StartHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// helper function to return error response
-func replyWithError(writer http.ResponseWriter,
+// ReplyWithError is a helper function to return error response
+func ReplyWithError(writer http.ResponseWriter,
 	statusCode int, error models.ErrorMessage) {
 	writer.WriteHeader(statusCode)
 	writer.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(writer).Encode(error)
 	if err != nil {
-		log.Printf("replyWithError failed to encode with: [%s]", err.Error())
+		log.Printf("ReplyWithError failed to encode with: [%s]", err.Error())
 		return
 	}
 }

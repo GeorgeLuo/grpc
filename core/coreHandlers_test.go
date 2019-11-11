@@ -1,5 +1,5 @@
 // handlers_test.go
-package main
+package core
 
 import (
 	"bytes"
