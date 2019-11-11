@@ -93,6 +93,11 @@ status:
 curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https://localhost:8443/jobs/status   -H 'Content-Type: application/json'   -d '{"alias":"test"}'
 ```
 
+stop:
+```
+curl   -X POST   --cert ./cert.pem   --key ./key.pem   --cacert ./cert.pem https://localhost:8443/jobs/stop   -H 'Content-Type: application/json'   -d '{"alias":"test"}'
+```
+
 ## Remote Usage With Docker
 
 To generate a set of cert and key, run the ./bin/generate-keys-remote.sh executable, and make the additions to your openssl.cnf file:
