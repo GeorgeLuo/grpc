@@ -1,3 +1,7 @@
+## grpc
+
+grpc implements a basic rpc server to start and stop processes remotely, with mutual TLS enforcement. There are some more advanced features currently being implemented and planned to be, see TODO section.
+
 ### Setup development environment
 Build dev environment
 ```
