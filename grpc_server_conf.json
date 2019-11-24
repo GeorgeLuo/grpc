@@ -1,0 +1,9 @@
+{
+  "network": {},
+  "port": "8443",
+  "workingDir": "./",
+  "logDir": "./",
+  "certFile": "cert.pem",
+  "cacertFile": "cert.pem",
+  "keyFile": "key.pem"
+}
