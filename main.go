@@ -19,6 +19,9 @@ import (
 
 // TODO: add a handler to eventstream output of process
 
+// StaticLogger is the global static logger
+var StaticLogger utils.StaticLogger
+
 func main() {
 	var config utils.ServerConfig
 	var err error
@@ -57,8 +60,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Println(string(prettyConf))
-	log.Println("setting up handlers ...")
+	StaticLogger = utils.NewStaticLogger(config.LogDir, "grpc_server.log")
+	StaticLogger.SetLevel(utils.D)
+	StaticLogger.SetGlobalPrepend("grpc_server")
+	core.StaticLogger = &StaticLogger
+	defer StaticLogger.Close()
+
+	StaticLogger.WriteDtInfo(string(prettyConf))
+	StaticLogger.WriteDtInfo("setting up handlers ...")
 
 	router := mux.NewRouter()
 	router.HandleFunc("/status", core.StatusHandler).
@@ -79,6 +88,7 @@ func main() {
 	// Create a CA certificate pool and add cert.pem to it
 	caCert, err := ioutil.ReadFile(config.CaCertFile)
 	if err != nil {
+		StaticLogger.WriteDtFatal(err.Error())
 		log.Fatal(err)
 	}
 	caCertPool := x509.NewCertPool()

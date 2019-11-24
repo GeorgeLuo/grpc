@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/GeorgeLuo/grpc/models"
+	"github.com/GeorgeLuo/grpc/utils"
 )
 
 // handle exec calls
@@ -20,6 +21,9 @@ import (
 
 var taskIDCommandMap models.SyncMap
 var hostname string
+
+// StaticLogger is the logger made available from the calling thread
+var StaticLogger *utils.StaticLogger
 
 // GlobalAliasMap is used to retrieve task_ids started under an alias
 var GlobalAliasMap models.AliasMap
@@ -76,7 +80,9 @@ func GetProcessStatus(taskID string) (*models.StatusResponse, error) {
 
 // RunCommand starts a process from command argument.
 func RunCommand(command string, alias string) (*models.StartResponse, error) {
-
+	if StaticLogger != nil {
+		StaticLogger.WriteDtDebug("command='" + command + "', alias='" + alias + "'")
+	}
 	var startResponse models.StartResponse
 	splitCommand := strings.Split(command, " ")
 
